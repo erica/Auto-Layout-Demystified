@@ -1,13 +1,9 @@
 Auto-Layout-Demystified
 =======================
 
-Welcome to the source code repository for Auto Layout Demystified. 
+Welcome to the source code repository for Auto Layout Demystified. Sample code is never a fixed target. It continues to evolve as Apple updates its SDK and the CocoaTouch libraries. Get involved. You can pitch in by suggesting bug fixes and corrections as well as by expanding the code that's on offer. 
 
-Sample code is never a fixed target. It continues to evolve as Apple updates its SDK and the CocoaTouch libraries. 
-
-Get involved. You can pitch in by suggesting bug fixes and corrections as well as by expanding the code that's on offer. 
-
-Github allows you to fork repositories and grow them with your own tweaks and features, and share those back to the main repository. If you come up with a new idea or approach, let us know. We'd be happy to include great suggestions both at the repository and in the next edition of this cookbook.
+Github allows you to fork repositories and grow them with your own tweaks and features, and share those back to the main repository. If you come up with a new idea or approach, let me know. My team will be happy to include great suggestions both at the repository and in the next edition of this book.
 
 <h3>About the Book</h3>
 Auto Layout Demystified is written for experienced developers who want to build constraint-based interfaces. It helps to be already be familiar with Objective-C, the Cocoa frameworks, and the Xcode Tools. 
