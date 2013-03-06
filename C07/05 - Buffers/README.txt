@@ -1,0 +1,1 @@
+Refer to Chapter 6 / Project 3 / iTunes Rotation. This example uses the same project
