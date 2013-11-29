@@ -1,0 +1,1 @@
+Refer to Chapter 6 / Project 3 / iTunes Rotation and the FloatViewsH() function in the Constraint Pack layout file

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>D77A776D-2C14-4441-8C15-FE0A78299BB8</string>
+	<key>IDESourceControlProjectName</key>
+	<string>HelloWorld</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>6ED5D36F-F199-466C-B670-AC5A1580E20D</key>
+		<string>https://github.com/erica/Auto-Layout-Demystified.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>C04/02 - Stretching/HelloWorld.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>6ED5D36F-F199-466C-B670-AC5A1580E20D</key>
+		<string>../../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/erica/Auto-Layout-Demystified.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>6ED5D36F-F199-466C-B670-AC5A1580E20D</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>6ED5D36F-F199-466C-B670-AC5A1580E20D</string>
+			<key>IDESourceControlWCCName</key>
+			<string>Auto-Layout-Demystified</string>
+		</dict>
+	</array>
+</dict>
+</plist>
