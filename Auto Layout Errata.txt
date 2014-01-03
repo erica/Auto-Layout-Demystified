@@ -1,0 +1,23 @@
+Auto Layout Errata
+
+Chapter 1, Exercise 3
+The references to view after the first line of the example should read testView to match the allocated view. (Thanks John Lindwall)
+
+Chapter 7
+“Page 231 in the print copy, the 2nd last paragraph on the page states that baseline alignment is OSX-only (not supported by iOS) which is false. iOS supports baseline alignment, as indicated by other examples in the book.” 
+
+Yup, I should have edited this in the 2nd edition after 7.0. (Thanks Jean-Pierre Simard)
+
+Chapter 4, Exercise 8
+“Chapter 4 excercise 8 seems to have a mistake. Either the format string should be "V:|-(-20)-[view1(==50)]" or the answer should refer to the horizontal axis instead of the vertical.” (Thanks Jean-Pierre Simard)
+
+Chapter 1 (First Edition)
+Second sentence in first chapter has "it's" when it should be "its" page 13 as a PDF "Introducing Auto Layout”, "Declaring Alignment Rectangles" has a problem in the first sentence: either the "a" should be removed, or it should be replaced with "us"
+(Thanks Jonathan Thompson)
+
+Chapter 1 (First Edition)
+“leading and trailing—The leading and trailing edges of the view's alignment rectangle. In left-to-right (English-like) systems, these correspond to "left" (leading) and "right" (trailing). In right-to-left linguistic environments like Arabic or Hebrew, these roles flip; right is trailing, and left is leading. “
+
+Should read “right is leading, and left is trailing”. 
+(Thanks Christoph Wendt)
+
