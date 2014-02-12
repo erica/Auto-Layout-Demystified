@@ -4,10 +4,15 @@
  
  */
 
+#if TARGET_OS_IPHONE
 @import Foundation;
 @import QuartzCore;
+#elif TARGET_OS_MAC
+#import <Foundation/Foundation.h>
+#import <QuartzCore/QuartzCore.h>
+#endif
 
-#import "ConstraintUtilities-Install.h"
+#import "ConstraintUtilities+Install.h"
 
 /*
  

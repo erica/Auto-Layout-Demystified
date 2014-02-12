@@ -4,7 +4,7 @@
  
  */
 
-#import "ConstraintUtilities-Matching.h"
+#import "ConstraintUtilities+Matching.h"
 #import "NametagUtilities.h"
 
 #pragma mark - Named Constraint Support

@@ -4,9 +4,13 @@
  
  */
 
+#if TARGET_OS_IPHONE
 @import Foundation;
+#elif TARGET_OS_MAC
+#import <Foundation/Foundation.h>
+#endif
 
-#import "ConstraintUtilities-Install.h"
+#import "ConstraintUtilities+Install.h"
 #import "NametagUtilities.h"
 
 #pragma mark - Testing Constraint Elements

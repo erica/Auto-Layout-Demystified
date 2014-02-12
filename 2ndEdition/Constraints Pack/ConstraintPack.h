@@ -12,10 +12,10 @@
 
 #import "NametagUtilities.h"
 
-#import "ConstraintUtilities-Install.h"
-#import "ConstraintUtilities-Matching.h"
-#import "ConstraintUtilities-Layout.h"
-#import "ConstraintUtilities-Description.h"
-#import "Constraints-Utility.h"
-#import "Constraints-CreationMacros.h"
+#import "ConstraintUtilities+Install.h"
+#import "ConstraintUtilities+Matching.h"
+#import "ConstraintUtilities+Layout.h"
+#import "ConstraintUtilities+Description.h"
+#import "ConstraintUtilities+Utility.h"
+#import "ConstraintUtilities+CreationMacros.h"
 

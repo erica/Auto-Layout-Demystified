@@ -5,9 +5,9 @@
  Thanks for formatting suggestions to Lyle Andrews
  */
 
-#import "ConstraintUtilities-Description.h"
-#import "ConstraintUtilities-Layout.h"
-#import "ConstraintUtilities-Matching.h"
+#import "ConstraintUtilities+Description.h"
+#import "ConstraintUtilities+Layout.h"
+#import "ConstraintUtilities+Matching.h"
 #import "NSObject-Description.h"
 
 #ifndef UIViewNoIntrinsicMetric
@@ -268,7 +268,7 @@
         return nil;
     
     // Must have common ancestor. Illegal otherwise
-    if (!([self.firstView nearestCommonAncestor:self.secondView]))
+    if (!([self.firstView nearestCommonAncestorToView:self.secondView]))
         return nil;
     
     // Odd multipliers not supported -- although easily added for odd cases
@@ -529,7 +529,7 @@
     if ([first isEqualToString:second])
         return [NSString stringWithFormat:@"%@%@ to Superview's %@", comparator, first, first];
     
-    if ([self.firstView isAncestorOf:self.secondView])
+    if ([self.firstView isAncestorOfView:self.secondView])
         return [NSString stringWithFormat:@"%@%@ to Superview's %@", comparator, second, first];
     
     return [NSString stringWithFormat:@"%@%@ to Superview's %@", comparator, first, second];
@@ -544,7 +544,7 @@
     if (self.firstItem == self.secondItem)
         return [self describeSelfConstraint];
     
-    BOOL superviewRelationship = ([self.firstView isAncestorOf:self.secondView] || [self.secondView isAncestorOf:self.firstView]);
+    BOOL superviewRelationship = ([self.firstView isAncestorOfView:self.secondView] || [self.secondView isAncestorOfView:self.firstView]);
     if (superviewRelationship)
         return [self describeSuperviewBasedConstraint];
     
@@ -940,7 +940,7 @@
     for (NSLayoutConstraint *constraint in references)
     {
         // List each likely owner (guaranteed if install)
-        VIEW_CLASS *nca = [constraint.firstView nearestCommonAncestor:constraint.secondView];
+        VIEW_CLASS *nca = [constraint.firstView nearestCommonAncestorToView:constraint.secondView];
         if (!nca) continue;
 
         // List each constraint

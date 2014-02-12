@@ -4,8 +4,8 @@
  
  */
 
-#import "ConstraintUtilities-Layout.h"
-#import "ConstraintUtilities-Matching.h"
+#import "ConstraintUtilities+Layout.h"
+#import "ConstraintUtilities+Matching.h"
 #import "NametagUtilities.h"
 
 #if TARGET_OS_IPHONE
@@ -305,7 +305,7 @@ void FloatViewsH(VIEW_CLASS *firstView, VIEW_CLASS *lastView, NSUInteger priorit
     if (!firstView.superview) return;
     if (!lastView.superview) return;
     
-    VIEW_CLASS *nca = [firstView nearestCommonAncestor:lastView];
+    VIEW_CLASS *nca = [firstView nearestCommonAncestorToView:lastView];
     if (!nca) return;
     if (nca == firstView)
         nca = firstView.superview;
@@ -341,7 +341,7 @@ void FloatViewsV(VIEW_CLASS *firstView, VIEW_CLASS *lastView, NSUInteger priorit
     if (!firstView.superview) return;
     if (!lastView.superview) return;
     
-    VIEW_CLASS *nca = [firstView nearestCommonAncestor:lastView];
+    VIEW_CLASS *nca = [firstView nearestCommonAncestorToView:lastView];
     if (!nca) return;
     if (nca == firstView)
         nca = firstView.superview;

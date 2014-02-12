@@ -6,7 +6,12 @@
 
 
 #import "NSObject-Nametag.h"
+
+#if TARGET_OS_IPHONE
 @import ObjectiveC;
+#elif TARGET_OS_MAC
+#import <objc/objc-runtime.h>
+#endif
 
 @implementation NSObject (Nametags)
 - (id) nametag

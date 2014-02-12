@@ -4,7 +4,7 @@
  
  */
 
-#import "ConstraintUtilities-Install.h"
+#import "ConstraintUtilities+Install.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wundeclared-selector"
@@ -87,22 +87,22 @@ NSArray *ConstraintsSourcedFromIB(NSArray *constraints)
 }
 
 // Test if the current view has a superview relationship to a view
-- (BOOL) isAncestorOf: (VIEW_CLASS *) aView
+- (BOOL) isAncestorOfView: (VIEW_CLASS *) aView
 {
     return [aView.superviews containsObject:self];
 }
 
 // Return the nearest common ancestor between self and another view
-- (VIEW_CLASS *) nearestCommonAncestor: (VIEW_CLASS *) aView
+- (VIEW_CLASS *) nearestCommonAncestorToView: (VIEW_CLASS *) aView
 {
     // Check for same view
     if (self == aView)
         return self;
     
     // Check for direct superview relationship
-    if ([self isAncestorOf:aView])
+    if ([self isAncestorOfView:aView])
         return self;
-    if ([aView isAncestorOf:self])
+    if ([aView isAncestorOfView:self])
         return aView;
     
     // Search for indirect common ancestor
@@ -154,7 +154,7 @@ NSArray *ConstraintsSourcedFromIB(NSArray *constraints)
     if (self.isUnary)
         return self.firstView;
     
-    return [self.firstView nearestCommonAncestor:self.secondView];
+    return [self.firstView nearestCommonAncestorToView:self.secondView];
 }
 
 
@@ -193,7 +193,7 @@ NSArray *ConstraintsSourcedFromIB(NSArray *constraints)
     }
     
     // Install onto nearest common ancestor
-    VIEW_CLASS *view = [self.firstView nearestCommonAncestor:self.secondView];
+    VIEW_CLASS *view = [self.firstView nearestCommonAncestorToView:self.secondView];
     if (!view)
     {
         NSLog(@"Error: Constraint cannot be installed. No common ancestor between items.");
@@ -227,7 +227,7 @@ NSArray *ConstraintsSourcedFromIB(NSArray *constraints)
     }
     
     // Remove from preferred recipient
-    VIEW_CLASS *view = [self.firstView nearestCommonAncestor:self.secondView];
+    VIEW_CLASS *view = [self.firstView nearestCommonAncestorToView:self.secondView];
     if (!view) return;
     
     // If the constraint not on view, this is a no-op

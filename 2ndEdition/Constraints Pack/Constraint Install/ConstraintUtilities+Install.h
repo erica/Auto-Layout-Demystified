@@ -4,9 +4,12 @@
  
  */
 
+#if TARGET_OS_IPHONE
 @import Foundation;
+#elif TARGET_OS_MAC
+#import <Foundation/Foundation.h>
+#endif
 
-#pragma mark - Cross Platform
 #pragma mark - Cross Platform
 #if TARGET_OS_IPHONE
     @import UIKit;
@@ -70,8 +73,8 @@ NSArray *ConstraintsSourcedFromIB(NSArray *constraints);
 @interface VIEW_CLASS (HierarchySupport)
 @property (nonatomic, readonly) NSArray *superviews;
 @property (nonatomic, readonly) NSArray *allSubviews;
-- (BOOL) isAncestorOf: (VIEW_CLASS *) aView;
-- (VIEW_CLASS *) nearestCommonAncestor: (VIEW_CLASS *) aView;
+- (BOOL) isAncestorOfView: (VIEW_CLASS *) aView;
+- (VIEW_CLASS *) nearestCommonAncestorToView: (VIEW_CLASS *) aView;
 @end
 
 // Convenience
