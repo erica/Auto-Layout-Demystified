@@ -1,15 +1,41 @@
 Auto Layout Errata
 
-Chapter 1, Exercise 3
+Chapter 1, Exercise 3 Page 29 and Answers to Exercises page 241
+
 The references to view after the first line of the example should read testView to match the allocated view. (Thanks John Lindwall)
 
-Chapter 7
+    UIView *testView = [[UIView alloc] initWithFrame:CGRectMake(50, 50, 100, 30)];    testView.backgroundColor = [UIColor blueColor]; 
+    [self.view addSubview: testView]; 
+    testView.translatesAutoresizingMaskIntoConstraints = NO;
+
+
+
+Chapter 2, Exercise 7 Page 59
+
+Reads: "If you add a button as a subview to View 2, where do you install a constraint between that button and View 1? Between that button and View 4?" 
+
+Should read "If you add a button as a subview to View 2, where do you install a constraint between that button and View 1? Between that button and View 2?"
+
+This update matches the answers on page 243
+
+
+
+Chapter 4, Exercise 8 page 143 / 247
+
+“Chapter 4 Exercise 8 seems to have a mistake. Either the format string should be "V:|-(-20)-[view1(==50)]" or the answer should refer to the horizontal axis instead of the vertical.” (Thanks Jean-Pierre Simard)
+
+Should read "8. Describe the results the constraint @"V:|-(-20)-[view1(==50)]" produces." on both page 143 and 247 to match the answer on page 247
+
+
+
+Chapter 7, Page 231
+
 “Page 231 in the print copy, the 2nd last paragraph on the page states that baseline alignment is OSX-only (not supported by iOS) which is false. iOS supports baseline alignment, as indicated by other examples in the book.” 
 
-Yup, I should have edited this in the 2nd edition after 7.0. (Thanks Jean-Pierre Simard)
+Yup, I should have edited this in the 2nd edition after 7.0. (Thanks Jean-Pierre Simard) Please discard the entire parenthetical comment.
 
-Chapter 4, Exercise 8
-“Chapter 4 excercise 8 seems to have a mistake. Either the format string should be "V:|-(-20)-[view1(==50)]" or the answer should refer to the horizontal axis instead of the vertical.” (Thanks Jean-Pierre Simard)
+
+FIRST EDITION
 
 Chapter 1 (First Edition)
 Second sentence in first chapter has "it's" when it should be "its" page 13 as a PDF "Introducing Auto Layout”, "Declaring Alignment Rectangles" has a problem in the first sentence: either the "a" should be removed, or it should be replaced with "us"
