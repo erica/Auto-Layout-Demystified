@@ -72,7 +72,7 @@ View *NearestCommonViewAncestor(View *view1, View *view2)
     return YES;
 }
 
-- (BOOL) install: (float) priority
+- (BOOL) installWithPriority: (float) priority
 {
     self.priority = priority;
     return [self install];
@@ -127,7 +127,7 @@ void InstallConstraints(NSArray *constraints, NSUInteger priority)
         if (![constraint isKindOfClass:[NSLayoutConstraint class]])
             continue;
         if (priority)
-            [constraint install:priority];
+            [constraint installWithPriority:priority];
         else
             [constraint install];
     }
@@ -364,7 +364,7 @@ void AlignViewInSuperview(View *view, NSLayoutAttribute attribute, NSInteger ins
         inset = inset * -1;
         
     NSLayoutConstraint *constraint = [NSLayoutConstraint constraintWithItem:view.superview  attribute:attribute relatedBy:NSLayoutRelationEqual toItem:view attribute:attribute multiplier:1 constant:inset];
-    [constraint install:priority];
+    [constraint installWithPriority:priority];
 }
 
 #pragma mark - View to View Layout
@@ -373,7 +373,7 @@ void AlignViews(View *view1, View *view2, NSLayoutAttribute attribute, NSUIntege
     if (!view1 || !view2) return;
     
     NSLayoutConstraint *constraint = [NSLayoutConstraint constraintWithItem:view1 attribute:attribute relatedBy:NSLayoutRelationEqual toItem:view2 attribute:attribute multiplier:1 constant:0];
-    [constraint install:priority];
+    [constraint installWithPriority:priority];
 }
 
 void CenterViewInSuperview(View *view, BOOL horizontal, BOOL vertical, NSUInteger priority)

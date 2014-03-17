@@ -24,9 +24,11 @@
 #if TARGET_OS_IPHONE
     @compatibility_alias View UIView;
     @compatibility_alias Color UIColor;
+    @compatibility_alias Image UIImage;
 #elif TARGET_OS_MAC
     @compatibility_alias View NSView;
     @compatibility_alias Color NSColor;
+    @compatibility_alias Image NSImage;
 #endif
 #endif
 #define COMPATIBILITY_ALIASES_DEFINED
@@ -44,7 +46,7 @@
  */
 @interface NSLayoutConstraint (ConstraintPack)
 - (BOOL) install;
-- (BOOL) install: (float) priority;
+- (BOOL) installWithPriority: (float) priority;
 - (void) remove;
 - (BOOL) refersToView: (View *) theView;
 @end
