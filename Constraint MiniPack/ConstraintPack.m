@@ -310,12 +310,14 @@ void PositionView(View *view, CGPoint point, NSUInteger priority)
 {
     if (!view || !view.superview)
         return;
-    
     NSDictionary *metrics = @{@"hLoc":@(point.x), @"vLoc":@(point.y)};
     NSDictionary *bindings = NSDictionaryOfVariableBindings(view);
-    NSArray *formats = @[
-                         @"H:|-hLoc-[view]",
-                         @"V:|-vLoc-[view]"];
+    
+    NSMutableArray *formats = [NSMutableArray array];
+    if (point.x != SkipConstraint)
+        [formats addObject:@"H:|-hLoc-[view]"];
+    if (point.y != SkipConstraint)
+        [formats addObject:@"V:|-vLoc-[view]"];
     InstallLayoutFormats(formats, 0, metrics, bindings, priority);
 }
 
@@ -427,7 +429,7 @@ void ConstrainViewsWithBinding(NSString *formatString, NSDictionary *bindings, N
 
 #pragma mark - Layout Guides
 #if TARGET_OS_IPHONE
-void StretchViewToController(View *view, UIViewController *controller, CGSize inset, NSUInteger priority)
+void StretchViewToController(UIViewController *controller, View *view, CGSize inset, NSUInteger priority)
 {
     id topGuide = controller.topLayoutGuide;
     id bottomGuide = controller.bottomLayoutGuide;
@@ -474,9 +476,9 @@ void StretchViewToBottomLayoutGuide(UIViewController *controller, View *view, NS
 - (void) setExtendLayoutUnderBars:(BOOL)extendLayoutUnderBars
 {
     if (extendLayoutUnderBars)
-        self.edgesForExtendedLayout = UIRectEdgeNone;
-    else
         self.edgesForExtendedLayout = UIRectEdgeAll;
+    else
+        self.edgesForExtendedLayout = UIRectEdgeNone;
 }
 @end
 #endif
@@ -506,3 +508,16 @@ void SetResistancePriority(View *view, NSUInteger priority)
         [view setContentCompressionResistancePriority:priority forOrientation:axis];
 #endif
 }
+
+#pragma mark - Integration
+
+#if TARGET_OS_IPHONE
+void LayoutThenCleanup(View *view, void(^layoutBlock)())
+{
+    if (layoutBlock) layoutBlock();
+    [view layoutIfNeeded];
+    if (view.superview)
+        [view.superview layoutIfNeeded];
+    RemoveConstraints(view.externalConstraintReferences);
+}
+#endif

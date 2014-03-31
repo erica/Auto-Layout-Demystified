@@ -111,7 +111,7 @@ void ConstrainViewsWithBinding(NSString *formatString, NSDictionary *bindings, N
 #if TARGET_OS_IPHONE
 void StretchViewToTopLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority);
 void StretchViewToBottomLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority);
-void StretchViewToController(View *view, UIViewController *controller, CGSize inset, NSUInteger priority);
+void StretchViewToController(UIViewController *controller, View *view, CGSize inset, NSUInteger priority);
 @interface UIViewController (ExtendedLayouts)
 @property (nonatomic) BOOL extendLayoutUnderBars;
 @end
@@ -122,4 +122,11 @@ void StretchViewToController(View *view, UIViewController *controller, CGSize in
  */
 void SetHuggingPriority(View *view, NSUInteger priority);
 void SetResistancePriority(View *view, NSUInteger priority);
+
+/*
+ LIVING IN A NON-CONSTRAINT WORLD
+ */
+#if TARGET_OS_IPHONE
+void LayoutThenCleanup(View *view, void(^layoutBlock)());
+#endif
 
