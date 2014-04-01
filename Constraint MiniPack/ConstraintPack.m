@@ -170,7 +170,7 @@ NSArray *ExternalConstraintsReferencingView(View *view)
                 [constraints addObject:constraint];
         }
     
-    return constraints;
+    return constraints.copy;
 }
 
 // Sizing constraints
@@ -188,7 +188,7 @@ NSArray *InternalConstraintsReferencingView(View *view)
             [constraints addObject:constraint];
     }
     
-    return constraints;
+    return constraints.copy;
 }
 
 // All constraints referencing view
@@ -370,7 +370,7 @@ void AlignViewInSuperview(View *view, NSLayoutAttribute attribute, NSInteger ins
 }
 
 #pragma mark - View to View Layout
-void AlignViews(View *view1, View *view2, NSLayoutAttribute attribute, NSUInteger priority)
+void AlignViews(NSUInteger priority, View *view1, View *view2, NSLayoutAttribute attribute)
 {
     if (!view1 || !view2) return;
     
@@ -383,9 +383,9 @@ void CenterViewInSuperview(View *view, BOOL horizontal, BOOL vertical, NSUIntege
     if (!view || !view.superview) return;
     
     if (horizontal)
-        AlignViews(view, view.superview, NSLayoutAttributeCenterX, priority);
+        AlignViews(priority, view, view.superview, NSLayoutAttributeCenterX);
     if (vertical)
-        AlignViews(view, view.superview, NSLayoutAttributeCenterY, priority);
+        AlignViews(priority, view, view.superview, NSLayoutAttributeCenterY);
 }
 
 #pragma mark - Visual Formats
@@ -406,7 +406,7 @@ void ConstrainViewPair(NSString *formatString, View *view1, View *view2, NSUInte
 }
 
 // Views are named view1, view2, view3...
-void ConstrainViewArray(NSString *formatString, NSArray *viewArray, NSUInteger priority)
+void ConstrainViewArray(NSUInteger priority, NSString *formatString, NSArray *viewArray)
 {
     if (!viewArray || (viewArray.count == 0)) return;
     
@@ -421,7 +421,7 @@ void ConstrainViewArray(NSString *formatString, NSArray *viewArray, NSUInteger p
     InstallLayoutFormats(@[formatString], 0, nil, bindings, priority);
 }
 
-void ConstrainViewsWithBinding(NSString *formatString, NSDictionary *bindings, NSUInteger priority)
+void ConstrainViewsWithBinding(NSUInteger priority, NSString *formatString, NSDictionary *bindings)
 {
     NSArray *constraints = [NSLayoutConstraint constraintsWithVisualFormat:formatString options:0 metrics:nil views:bindings];
     InstallConstraints(constraints, priority);

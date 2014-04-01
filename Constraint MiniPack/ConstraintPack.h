@@ -100,10 +100,10 @@ void AlignViewInSuperview(View *view, NSLayoutAttribute attribute, NSInteger ins
 /*
  VIEW TO VIEW LAYOUT
  */
-void AlignViews(View *view1, View *view2, NSLayoutAttribute attribute, NSUInteger priority);
-void ConstrainViewArray(NSString *formatString, NSArray *viewArray, NSUInteger priority); // Use view1, view2, view3... to match array order
-void ConstrainViewsWithBinding(NSString *formatString, NSDictionary *bindings, NSUInteger priority);
-#define ConstrainViews(_priority_, _formatString_, ...) ConstrainViewsWithBinding(_formatString_, NSDictionaryOfVariableBindings(__VA_ARGS__), _priority_)
+void AlignViews(NSUInteger priority, View *view1, View *view2, NSLayoutAttribute attribute);
+void ConstrainViewArray(NSUInteger priority, NSString *formatString, NSArray *viewArray); // Use view1, view2, view3... to match array order
+void ConstrainViewsWithBinding(NSUInteger priority, NSString *formatString, NSDictionary *bindings);
+#define ConstrainViews(_priority_, _formatString_, ...) ConstrainViewsWithBinding(_priority_, _formatString_, NSDictionaryOfVariableBindings(__VA_ARGS__))
 
 /*
  LAYOUT GUIDES
