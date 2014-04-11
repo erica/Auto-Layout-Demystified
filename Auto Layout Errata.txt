@@ -26,7 +26,13 @@ Chapter 4, Exercise 8 page 143 / 247
 
 Should read "8. Describe the results the constraint @"V:|-(-20)-[view1(==50)]" produces." on both page 143 and 247 to match the answer on page 247
 
+Chapter 5, page 154
 
+"Example 5-5’s constraint derives from a function I built to add grid backsplashes to a view, as shown in Figure 5-4." 
+
+Should read: "Example 5-6’s constraint derives from a function I built to add grid backsplashes to a view, as shown in Figure 5-4."
+
+Thanks Will Merrill
 
 Chapter 7, Page 231
 
