@@ -227,7 +227,7 @@
 		8EF624D315892BA600A81FD2 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0450;
+				LastUpgradeCheck = 0510;
 				ORGANIZATIONNAME = "Erica Sadun";
 			};
 			buildConfigurationList = 8EF624D615892BA600A81FD2 /* Build configuration list for PBXProject "HelloWorld" */;
@@ -313,6 +313,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

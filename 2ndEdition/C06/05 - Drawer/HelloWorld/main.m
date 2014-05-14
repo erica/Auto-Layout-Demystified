@@ -23,6 +23,7 @@
 
 - (void) viewWillAppear:(BOOL)animated
 {
+    [super viewWillAppear:animated];
     [holder updateConstraints];
     [self.view.window layoutIfNeeded];
 }
@@ -193,7 +194,6 @@
 @implementation TestBedAppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions 
 {	
-    srandom(time(0));
     _window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
 	TestBedViewController *tbvc = [[TestBedViewController alloc] init];
     tbvc.edgesForExtendedLayout = UIRectEdgeNone;

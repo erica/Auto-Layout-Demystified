@@ -18,7 +18,7 @@
 + (NSArray *) originatedPositionNames;
 
 @property (nonatomic, retain) NSArray *competingPositionNames;
-@property (nonatomic, weak) UIView *handle;
+@property (nonatomic, strong) UIView *handle;
 @property (nonatomic, assign) CGFloat drawerHeight;
 
 // View management
