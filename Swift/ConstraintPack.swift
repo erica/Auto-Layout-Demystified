@@ -10,46 +10,39 @@
 import Foundation
 import UIKit
 
-let SkipConstraint : Float = CGRectNull.origin.x
-let SkipOptions : NSLayoutFormatOptions = NSLayoutFormatOptions.fromMask(0)
+let SkipConstraint = CGRectNull.origin.x
+let SkipOptions = NSLayoutFormatOptions.fromMask(0)
+
+// Return superviews
+func Superviews(view : UIView) -> (UIView[])
+{
+    var array : UIView[] = []
+    var currentView = view.superview
+    
+    while (currentView != nil)
+    {
+        array += currentView
+        currentView = currentView.superview
+    }
+    return array
+}
 
 // Return nearest common ancestor between two views
 func NearestCommonViewAncestor(view1 : UIView, view2 : UIView) -> (UIView?)
 {
     if (view1 === view2) {return view1}
     
-    // Collect superviews
-    
-    var array1 : NSMutableArray = NSMutableArray()
-    array1.addObject(view1)
-    var view : UIView? = nil
-    
-    view = view1.superview
-    while (view != nil)
-    {
-        array1.addObject(view)
-        view = (view as UIView).superview
-    }
-    
-    var array2 : NSMutableArray = NSMutableArray()
-    array2.addObject(view2)
-
-    view = view2.superview
-    while (view != nil)
-    {
-        array2.addObject(view)
-        view = (view as UIView).superview
-    }
+    var view1Superviews = Superviews(view1)
+    var view2Superviews = Superviews(view2)
     
     // Check for superview relationships
-    if (array1.containsObject(view2)) {return view2}
-    if (array2.containsObject(view1)) {return view1}
+    if ContainsObject(view1Superviews, view2) {return view2}
+    if ContainsObject(view2Superviews, view1) {return view1}
     
     // Check for indirect ancestor
-    for eachItem : AnyObject in array1
+    for eachItem in view1Superviews
     {
-        let eachView : UIView = eachItem as UIView
-        if (array2.containsObject(eachView)) {return eachView}
+        if ContainsObject(view2Superviews, eachItem) {return eachItem}
     }
     
     return nil
@@ -60,23 +53,30 @@ extension NSLayoutConstraint
 {
     func install() -> (Bool)
     {
-        let firstView : UIView = self.firstItem as UIView
-        let secondView : UIView = self.secondItem as UIView
+        if (self.firstItem === nil)
+        {
+            println("Error: This should never happen. Missing first item")
+            return false
+        }
         
-        if (secondView === nil)
+        let firstView = self.firstItem as UIView
+
+        if (self.secondItem === nil)
         {
             firstView.addConstraint(self)
             return true
         }
         
-        let ncaView : UIView? = NearestCommonViewAncestor(firstView, secondView)
+        let secondView = self.secondItem as UIView
+        
+        let ncaView = NearestCommonViewAncestor(firstView, secondView)
         if (ncaView === nil)
         {
             println("Error: Constraint cannot be installed. No common ancestor between items")
             return false
         }
         
-        (ncaView as UIView).addConstraint(self)
+        ncaView!.addConstraint(self)
         return true
     }
     
@@ -94,6 +94,12 @@ extension NSLayoutConstraint
             return
         }
         
+        if (self.firstItem === nil)
+        {
+            println("Error: This should never happen. Missing first item")
+            return
+        }
+        
         if (self.secondItem === nil)
         {
             let view : UIView = self.firstItem as UIView
@@ -101,10 +107,9 @@ extension NSLayoutConstraint
             return
         }
         
-        let firstView : UIView = self.firstItem as UIView
-        let secondView : UIView = self.secondItem as UIView
-
-        let ncaView : UIView? = NearestCommonViewAncestor(firstView, secondView)
+        let firstView = self.firstItem as UIView
+        let secondView = self.secondItem as UIView
+        let ncaView = NearestCommonViewAncestor(firstView, secondView)
         
         // This should not happen
         if (!ncaView)
@@ -113,19 +118,25 @@ extension NSLayoutConstraint
             return
         }
         
-        (ncaView as UIView).removeConstraint(self)
+        ncaView!.removeConstraint(self)
     }
     
     func refersToView(theView : UIView) -> (Bool)
     {
+        if (self.firstItem === nil)
+        {
+            println("Error: This should never happen. Missing first item")
+            return false
+        }
+
         if (self.secondItem === nil)
         {
             let view : UIView = self.firstItem as UIView
             return (view === theView)
         }
         
-        let firstView : UIView = self.firstItem as UIView
-        let secondView : UIView = self.secondItem as UIView
+        let firstView = self.firstItem as UIView
+        let secondView = self.secondItem as UIView
         
         if (firstView === theView) {return true}
         if (secondView === theView) {return true}
@@ -134,11 +145,12 @@ extension NSLayoutConstraint
 }
 
 // Installation
+
 func InstallConstraints(constraints : NSArray, priority : Float)
 {
     for item : AnyObject in constraints
     {
-        let constraint : NSLayoutConstraint = item as NSLayoutConstraint
+        let constraint = item as NSLayoutConstraint
         if (!constraint.isMemberOfClass(NSLayoutConstraint)) {continue}
         constraint.installWithPriority(priority)
     }
@@ -148,7 +160,7 @@ func InstallConstraints(constraints : NSArray)
 {
     for item : AnyObject in constraints
     {
-        let constraint : NSLayoutConstraint = item as NSLayoutConstraint
+        let constraint = item as NSLayoutConstraint
         if (!constraint.isMemberOfClass(NSLayoutConstraint)) {continue}
         constraint.install()
     }
@@ -164,50 +176,41 @@ func RemoveConstraints(constraints : NSArray)
     }
 }
 
-// References
+// The following items currently work in NSArray to stay in Foundation
 
-// External constraints
+// External constraint references
 func ExternalConstraintsReferencingView(view : UIView) -> (NSArray)
 {
-    var superviews : NSMutableArray = NSMutableArray()
-    var aView : UIView? = view.superview
-    while (aView != nil)
+    var superviews = Superviews(view)
+    var constraints : NSLayoutConstraint[] = []
+    for superview : UIView in superviews
     {
-        superviews.addObject(view)
-        aView = (aView as UIView).superview
-    }
-    
-    var constraints : NSMutableArray = NSMutableArray()
-    for eachSuperview : AnyObject in superviews
-    {
-        let superview = eachSuperview as UIView
         for eachConstraint : AnyObject in superview.constraints()
         {
-            let constraint : NSLayoutConstraint = eachConstraint as NSLayoutConstraint
+            let constraint = eachConstraint as NSLayoutConstraint
             if (constraint.refersToView(view))
             {
-                constraints.addObject(constraint)
+                constraints += constraint
             }
         }
-    }
-    
-    return constraints
+    }    
+    return constraints as NSArray
 }
 
-// Return sizing constraints
+// Internal constraint references
 func InternalConstraintsReferencingView(view : UIView) -> (NSArray)
 {
-    var constraints : NSMutableArray = NSMutableArray()
+    var constraints : NSLayoutConstraint[] = []
     for eachConstraint : AnyObject in view.constraints()
     {
-        let constraint : NSLayoutConstraint = eachConstraint as NSLayoutConstraint
+        let constraint = eachConstraint as NSLayoutConstraint
         if (!constraint.isMemberOfClass(NSLayoutConstraint)) {continue}
         if (constraint.refersToView(view))
         {
-            constraints.addObject(constraint)
+            constraints += constraint
         }
     }
-    return constraints
+    return constraints as NSArray
 }
 
 func ConstraintsReferencingView(view : UIView) -> (NSArray)
@@ -259,51 +262,50 @@ func InstallLayoutFormats(formats : NSArray, options : NSLayoutFormatOptions, me
 
 // Constraining Sizes
 
-func ConstrainMinimumViewSize(view : UIView, size : CGSize, priority : Float)
+func SizeView(view : UIView, size : CGSize, priority : Float)
 {
-    let metrics : NSDictionary = ["width" : size.width, "height" : size.height]
-    let bindings : NSDictionary = ["view" : view]
-    let formats : NSMutableArray = [] as NSMutableArray
+    let metrics = ["width" : size.width, "height" : size.height]
+    let bindings = ["view" : view]
+    var formats : String[] = []
     if (size.width != SkipConstraint)
     {
-        formats.addObject("H:[view(>=width)]")
+        formats += "H:[view(==width)]"
     }
     if (size.height != SkipConstraint)
     {
-        formats.addObject("V:[view(>=height)]")
+        formats += "V:[view(==height)]"
+    }
+    InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
+}
+
+func ConstrainMinimumViewSize(view : UIView, size : CGSize, priority : Float)
+{
+    let metrics = ["width" : size.width, "height" : size.height]
+    let bindings = ["view" : view]
+    var formats : String[] = []
+    if (size.width != SkipConstraint)
+    {
+        formats += "H:[view(>=width)]"
+    }
+    if (size.height != SkipConstraint)
+    {
+        formats += "V:[view(>=height)]"
     }
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
 
 func ConstrainMaximumViewSize(view : UIView, size : CGSize, priority : Float)
 {
-    let metrics : NSDictionary = ["width" : size.width, "height" : size.height]
-    let bindings : NSDictionary = ["view" : view]
-    let formats : NSMutableArray = [] as NSMutableArray
+    let metrics = ["width" : size.width, "height" : size.height]
+    let bindings = ["view" : view]
+    var formats : String[] = []
     if (size.width != SkipConstraint)
     {
-        formats.addObject("H:[view(<=width)]")
+        formats += "H:[view(<=width)]"
     }
     if (size.height != SkipConstraint)
     {
-        formats.addObject("V:[view(<=height)]")
-    }
-    InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
-}
-
-func SizeView(view : UIView, size : CGSize, priority : Float)
-{
-    if (!view.superview) {return}
-    let metrics : NSDictionary = ["width" : size.width, "height" : size.height]
-    let bindings : NSDictionary = ["view" : view]
-    let formats : NSMutableArray = [] as NSMutableArray
-    if (size.width != SkipConstraint)
-    {
-        formats.addObject("H:[view(==width)]")
-    }
-    if (size.height != SkipConstraint)
-    {
-        formats.addObject("V:[view(==height)]")
+        formats += "V:[view(<=height)]"
     }
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
@@ -313,16 +315,16 @@ func SizeView(view : UIView, size : CGSize, priority : Float)
 func PositionView(view : UIView, point : CGPoint, priority : Float)
 {
     if (!view.superview) {return}
-    let metrics : NSDictionary = ["hLoc" : point.x, "vLoc" : point.y]
-    let bindings : NSDictionary = ["view" : view]
-    let formats : NSMutableArray = [] as NSMutableArray
+    let metrics = ["hLoc" : point.x, "vLoc" : point.y]
+    let bindings = ["view" : view]
+    var formats : String[] = []
     if (point.x != SkipConstraint)
     {
-        formats.addObject("H:|-hLoc-[view]")
+        formats += "H:|-hLoc-[view]"
     }
     if (point.y != SkipConstraint)
     {
-        formats.addObject("V:|-vLoc-[view]")
+        formats += "V:|-vLoc-[view]"
     }
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
@@ -330,7 +332,7 @@ func PositionView(view : UIView, point : CGPoint, priority : Float)
 func ConstrainViewToSuperview(view : UIView, inset : Float, priority : Float)
 {
     if (!view.superview) {return}
-    let formats : NSArray = [
+    let formats = [
         "H:|->=inset-[view]",
         "H:[view]->=inset-|",
         "V:|->=inset-[view]",
@@ -340,21 +342,21 @@ func ConstrainViewToSuperview(view : UIView, inset : Float, priority : Float)
 
 // Stretching
 
-func StretchViewHorizontallyToSuperview(view : UIView, inset : Float, priority : Float)
+func StretchViewHorizontallyToSuperview(view : UIView, inset : CGFloat, priority : Float)
 {
     if (!view.superview) {return}
-    let metrics : NSDictionary = ["inset" : inset]
-    let bindings : NSDictionary = ["view" : view]
-    let formats : NSArray = ["H:|-inset-[view]-inset-|"]
+    let metrics = ["inset" : inset]
+    let bindings = ["view" : view]
+    let formats = ["H:|-inset-[view]-inset-|"]
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
 
-func StretchViewVerticallyToSuperview(view : UIView, inset : Float, priority : Float)
+func StretchViewVerticallyToSuperview(view : UIView, inset : CGFloat, priority : Float)
 {
     if (!view.superview) {return}
-    let metrics : NSDictionary = ["inset" : inset]
-    let bindings : NSDictionary = ["view" : view]
-    let formats : NSArray = ["V:|-inset-[view]-inset-|"]
+    let metrics = ["inset" : inset]
+    let bindings = ["view" : view]
+    let formats = ["V:|-inset-[view]-inset-|"]
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
 
@@ -374,22 +376,19 @@ func StretchViewToSuperview(view : UIView, inset : CGSize, priority : Float)
 
 // Aligning
 
-func AlignViewInSuperview(view : UIView, attribute : NSLayoutAttribute, inset : Float, priority : Float)
+func AlignViewInSuperview(view : UIView, attribute : NSLayoutAttribute, inset : CGFloat, priority : Float)
 {
-    var actualInset : Float = inset
-    
     if (!view.superview) {return}
+    
+    var actualInset : CGFloat
     switch attribute {
-    case NSLayoutAttribute.Baseline, NSLayoutAttribute.CenterX, NSLayoutAttribute.CenterY, NSLayoutAttribute.Width, NSLayoutAttribute.Height:
-        println("Error: Unsupported alignment attribute")
-        return
     case NSLayoutAttribute.Left, NSLayoutAttribute.Leading, NSLayoutAttribute.Top:
-        actualInset = actualInset * -1
+        actualInset = inset * -1.0
     default:
-        return
+        actualInset = inset
     }
-
-    let constraint : NSLayoutConstraint = NSLayoutConstraint(item:view.superview, attribute:attribute, relatedBy: NSLayoutRelation.Equal, toItem: view, attribute: attribute, multiplier: 1, constant: actualInset)
+    
+    let constraint = NSLayoutConstraint(item:view.superview, attribute:attribute, relatedBy: NSLayoutRelation.Equal, toItem: view, attribute: attribute, multiplier: 1.0, constant: actualInset)
     constraint.installWithPriority(priority)
 }
 
@@ -399,7 +398,8 @@ func AlignViews(priority : Float, view1 : UIView, view2 : UIView, attribute : NS
     constraint.installWithPriority(priority)
 }
 
-// View to View layout
+// View to View Layout
+
 func CenterViewInSuperview(view : UIView, horizontal : Bool, vertical : Bool, priority : Float)
 {
     if (!view.superview) {return}
@@ -409,31 +409,32 @@ func CenterViewInSuperview(view : UIView, horizontal : Bool, vertical : Bool, pr
 
 func ConstrainView(format : NSString, view : UIView, priority : Float)
 {
-    let formats : NSArray = [format] as NSArray
-    let bindings : NSDictionary = ["view" : view] as NSDictionary
-    let metrics : NSDictionary = NSDictionary()
+    let formats = [format]
+    let bindings = ["view" : view]
+    let metrics  = NSDictionary()
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
 
 func ConstrainviewPair(format : NSString, view1 : UIView, view2 : UIView, priority : Float)
 {
-    let formats : NSArray = [format] as NSArray
-    let bindings : NSDictionary = ["view1" : view1, "view2" : view2] as NSDictionary
-    let metrics : NSDictionary = NSDictionary()
+    let formats = [format]
+    let bindings = ["view1" : view1, "view2" : view2]
+    let metrics = NSDictionary()
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
 
-// Views are named view1, view2, view3...
 func ConstrainViewArray(priority : Float, format : NSString, viewArray : NSArray)
 {
-    let formats : NSArray = [format] as NSArray
-    let metrics : NSDictionary = NSDictionary()
-    let bindings : NSMutableDictionary = NSMutableDictionary()
-    var index : Int = 1
+    // Views are named view1, view2, view3...
+
+    let formats = [format]
+    let metrics = NSDictionary()
+    var bindings = NSMutableDictionary()
+    var index : Int = 1 // start at view1
     for eachViewItem : AnyObject in viewArray
     {
-        let view : UIView = eachViewItem as UIView
-        let key : NSString = "view" + "\(index)"
+        let view = eachViewItem as UIView
+        let key = "view" + "\(index)"
         bindings[key] = view
     }
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
@@ -441,42 +442,43 @@ func ConstrainViewArray(priority : Float, format : NSString, viewArray : NSArray
 
 func ConstrainViewsWithBindings(priority : Float, format : NSString, bindings : NSDictionary)
 {
-    let formats : NSArray = [format] as NSArray
-    let metrics : NSDictionary = NSDictionary()
+    let formats = [format]
+    let metrics = NSDictionary()
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
 
-// Layout Guides
+// Working with Layout Guides
+
 func StretchViewToTopLayoutGuide(controller : UIViewController, view : UIView, inset : NSInteger, priority : Float)
 {
-    let topGuide : AnyObject = controller.topLayoutGuide
-    let metrics : NSDictionary = ["vinset":inset]
-    let bindings : NSDictionary = ["view" : view, "topGuide" : topGuide]
-    let formats : NSArray = ["V:[topGuide]-vinset-[view]"]
+    let topGuide = controller.topLayoutGuide
+    let metrics = ["vinset":inset]
+    let bindings = ["view" : view, "topGuide" : topGuide]
+    let formats = ["V:[topGuide]-vinset-[view]"]
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
 
 func StretchViewToBottomLayoutGuide(controller : UIViewController, view : UIView, inset : NSInteger, priority : Float)
 {
-    let bottomGuide : AnyObject = controller.bottomLayoutGuide
-    let metrics : NSDictionary = ["vinset":inset]
-    let bindings : NSDictionary = ["view" : view, "bottomGuide" : bottomGuide]
-    let formats : NSArray = ["V:[view]-vinset-[bottomGuide]"]
+    let bottomGuide = controller.bottomLayoutGuide
+    let metrics = ["vinset":inset]
+    let bindings = ["view" : view, "bottomGuide" : bottomGuide]
+    let formats = ["V:[view]-vinset-[bottomGuide]"]
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
 
 func StretchViewToController(controller : UIViewController, view : UIView, inset : CGSize, priority : Float)
 {
-    let topGuide : AnyObject = controller.topLayoutGuide
-    let bottomGuide : AnyObject = controller.bottomLayoutGuide
-    
-    let metrics : NSDictionary = ["hinset":inset.width, "vinset":inset.height]
-    let bindings : NSDictionary = ["view" : view, "topGuide" : topGuide, "bottomGuide" : bottomGuide]
-    let formats : NSArray = ["V:[topGuide]-vinset-[view]-vinset-[bottomGuide]", "H:|-hinset-[view]-hinset-|"]
+    let topGuide = controller.topLayoutGuide
+    let bottomGuide = controller.bottomLayoutGuide
+    let metrics = ["hinset":inset.width, "vinset":inset.height]
+    let bindings = ["view" : view, "topGuide" : topGuide, "bottomGuide" : bottomGuide]
+    let formats = ["V:[topGuide]-vinset-[view]-vinset-[bottomGuide]", "H:|-hinset-[view]-hinset-|"]
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
 
 // Integration
+
 func LayoutThenCleanup(view : UIView, layout : Void -> Void)
 {
     layout()
@@ -485,7 +487,7 @@ func LayoutThenCleanup(view : UIView, layout : Void -> Void)
     RemoveConstraints(view.externalConstraintReferences())
 }
 
-// UIViewController
+// UIViewController extended layout
 
 extension UIViewController
 {
