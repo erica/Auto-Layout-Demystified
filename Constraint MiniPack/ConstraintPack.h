@@ -11,27 +11,28 @@
  Allow constraint utilities to work cross-platform
  */
 
+#import <Foundation/Foundation.h>
+// #import <TargetConditionals.h>
+
+@import Foundation;
+
 // Imports
 #if TARGET_OS_IPHONE
-    @import UIKit;
-    @import Foundation;
-#elif TARGET_OS_MAC
-    #import <Foundation/Foundation.h>
+@import UIKit;
 #endif
 
-// Compatibility aliases
-#ifndef  COMPATIBILITY_ALIASES_DEFINED
+// Compatibility
 #if TARGET_OS_IPHONE
-    @compatibility_alias View UIView;
-    @compatibility_alias Color UIColor;
-    @compatibility_alias Image UIImage;
+#define View UIView
+#define Color UIColor
+#define Image UIImage
+#define Font UIFont
 #elif TARGET_OS_MAC
-    @compatibility_alias View NSView;
-    @compatibility_alias Color NSColor;
-    @compatibility_alias Image NSImage;
+#define View NSView
+#define Color NSColor
+#define Image NSImage
+#define Font NSFont
 #endif
-#endif
-#define COMPATIBILITY_ALIASES_DEFINED
 
 /*
  CONVENIENCE CONSTANTS
@@ -66,6 +67,7 @@ void RemoveConstraints(NSArray *constraints);
 @property (nonatomic, readonly) NSArray *constraintReferences;
 @property (nonatomic) BOOL autoLayoutEnabled;
 - (View *) nearestCommonAncestorWithView: (View *) view;
+- (void) dumpViews;
 @end
 
 /*
@@ -111,6 +113,13 @@ void ConstrainViewsWithBinding(NSUInteger priority, NSString *formatString, NSDi
 #if TARGET_OS_IPHONE
 void StretchViewToTopLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority);
 void StretchViewToBottomLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority);
+
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
+// iOS 8 and later only
+void StretchViewToLeftLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority);
+void StretchViewToRightLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority);
+#endif
+
 void StretchViewToController(UIViewController *controller, View *view, CGSize inset, NSUInteger priority);
 @interface UIViewController (ExtendedLayouts)
 @property (nonatomic) BOOL extendLayoutUnderBars;
@@ -129,4 +138,10 @@ void SetResistancePriority(View *view, NSUInteger priority);
 #if TARGET_OS_IPHONE
 void LayoutThenCleanup(View *view, void(^layoutBlock)());
 #endif
+
+// Cleanup
+#undef View
+#undef Color
+#undef Image
+#undef Font
 

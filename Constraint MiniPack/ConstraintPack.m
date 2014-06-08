@@ -7,6 +7,17 @@
  */
 
 #import "ConstraintPack.h"
+#if TARGET_OS_IPHONE
+#define View UIView
+#define Color UIColor
+#define Image UIImage
+#define Font UIFont
+#elif TARGET_OS_MAC
+#define View NSView
+#define Color NSColor
+#define Image NSImage
+#define Font NSFont
+#endif
 
 // Return nearest common ancestor between two views
 View *NearestCommonViewAncestor(View *view1, View *view2)
@@ -234,6 +245,27 @@ NSArray *ConstraintsReferencingView(View *view)
 {
     self.translatesAutoresizingMaskIntoConstraints = !autoLayoutEnabled;
 }
+
+- (void) dumpViewsAtIndent: (int) indent
+{
+    for (int i = 0; i < indent * 4; i++) printf("-");
+    printf("[%s:%0x]", self.class.description.UTF8String, (NSInteger) self);
+    if (self.tag != 0)
+        printf(" (tag:%0zd)", self.tag);
+    printf(" [%0.1f, %0.1f, %0.1f, %0.1f]", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
+    printf(" constraints: %zd stored, %zd references", self.constraints.count, self.constraintReferences.count);
+    
+    
+    printf("\n");
+    
+    for (UIView *view in self.subviews)
+        [view dumpViewsAtIndent:indent + 1];
+}
+
+- (void) dumpViews
+{
+    [self dumpViewsAtIndent:0];
+}
 @end
 
 #pragma mark - Format Installation
@@ -429,18 +461,6 @@ void ConstrainViewsWithBinding(NSUInteger priority, NSString *formatString, NSDi
 
 #pragma mark - Layout Guides
 #if TARGET_OS_IPHONE
-void StretchViewToController(UIViewController *controller, View *view, CGSize inset, NSUInteger priority)
-{
-    id topGuide = controller.topLayoutGuide;
-    id bottomGuide = controller.bottomLayoutGuide;
-
-    NSDictionary *metrics = @{@"hinset":@(inset.width), @"vinset":@(inset.height)};
-    NSDictionary *bindings = NSDictionaryOfVariableBindings(view, topGuide, bottomGuide);
-    NSArray *formats = @[@"V:[topGuide]-vinset-[view]-vinset-[bottomGuide]", @"H:|-hinset-[view]-hinset-|"];
-    
-    InstallLayoutFormats(formats, 0, metrics, bindings, priority);
-}
-
 void StretchViewToTopLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority)
 {
     if (!controller || !view) return;
@@ -466,6 +486,53 @@ void StretchViewToBottomLayoutGuide(UIViewController *controller, View *view, NS
     
     InstallLayoutFormats(formats, 0, metrics, bindings, priority);
 }
+
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
+// iOS 8 introduces left and right layout guides
+void StretchViewToLeftLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority)
+{
+    if (!controller || !view) return;
+    
+    id leftGuide = controller.leftLayoutGuide;
+    
+    NSDictionary *metrics = @{@"inset":@(inset)};
+    NSDictionary *bindings = NSDictionaryOfVariableBindings(view, leftGuide);
+    NSArray *formats = @[@"V:[leftGuide]-inset-[view]"];
+    
+    InstallLayoutFormats(formats, 0, metrics, bindings, priority);
+}
+
+void StretchViewToRightLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority)
+{
+    if (!controller || !view) return;
+    
+    id rightGuide = controller.rightLayoutGuide;
+    
+    NSDictionary *metrics = @{@"inset":@(inset)};
+    NSDictionary *bindings = NSDictionaryOfVariableBindings(view, rightGuide);
+    NSArray *formats = @[@"V:[view]-inset-[rightGuide]"];
+    
+    InstallLayoutFormats(formats, 0, metrics, bindings, priority);
+}
+#endif
+
+// iOS 8 introduces left and right layout guides
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
+void StretchViewToController(UIViewController *controller, View *view, CGSize inset, NSUInteger priority)
+{
+    StretchViewToLeftLayoutGuide(controller, view, inset.width, priority);
+    StretchViewToRightLayoutGuide(controller, view, inset.width, priority);
+    StretchViewToTopLayoutGuide(controller, view, inset.height, priority);
+    StretchViewToBottomLayoutGuide(controller, view, inset.height, priority);
+}
+#else
+void StretchViewToController(UIViewController *controller, View *view, CGSize inset, NSUInteger priority)
+{
+    StretchViewHorizontallyToSuperview(view, inset.width, priority);
+    StretchViewToTopLayoutGuide(controller, view, inset.height, priority);
+    StretchViewToBottomLayoutGuide(controller, view, inset.height, priority);
+}
+#endif
 
 @implementation UIViewController (ExtendedLayouts)
 - (BOOL) extendLayoutUnderBars
@@ -521,3 +588,9 @@ void LayoutThenCleanup(View *view, void(^layoutBlock)())
     RemoveConstraints(view.externalConstraintReferences);
 }
 #endif
+
+// Cleanup
+#undef View
+#undef Color
+#undef Image
+#undef Font
