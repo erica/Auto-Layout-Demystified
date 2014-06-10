@@ -3,6 +3,8 @@
  Erica Sadun, http://ericasadun.com
  Auto Layout Demystified
 
+ Requires CrossPlatformDefines.swift
+
 */
 
 import Foundation
@@ -13,52 +15,12 @@ import ObjectiveC
     import Cocoa
 #endif
 
-#if os(iOS)
-// Uncomment this if you do not have the cross-platform material defined elsewhere
-//    typealias View = UIView
-#else
-// This assumes View is not aliased in the Mac Pack
-    typealias View = NSView
-#endif
-
-#if os(iOS)
-#else
-    // Utility, normally included with iOS Utility Pack
-    extension Array {
-        func containsObject(testItem:AnyObject) -> Bool
-        {
-            return (self as NSArray).containsObject(testItem)
-        }
-        
-        func indexOfObject(object : AnyObject) -> NSInteger
-        {
-            return (self as NSArray).indexOfObject(object)
-        }
-        
-        mutating func removeObject(object : AnyObject)
-        {
-            let index = self.indexOfObject(object)
-            if (index == NSNotFound) {
-                println("Error: object \(object) not found in array")
-                return
-            }
-            
-            self.removeAtIndex(index)
-        }
-        
-        func objectAtIndex(index : Int) -> AnyObject?
-        {
-            if ((index >= 0) && (index < self.count)) {
-                return (self as NSArray).objectAtIndex(index)
-            }
-            
-            return nil
-        }
-    }
-#endif
-
 let SkipConstraint = CGRectNull.origin.x
 let SkipOptions = NSLayoutFormatOptions.fromMask(0)
+
+// **************************************
+// MARK: Superviews / Ancestors
+// **************************************
 
 // Return superviews
 func Superviews(view : View) -> (View[])
@@ -83,17 +45,28 @@ func NearestCommonViewAncestor(view1 : View, view2 : View) -> (View?)
     var view2Superviews = Superviews(view2)
     
     // Check for superview relationships
-    if view1Superviews.containsObject(view2) {return view2}
-    if view2Superviews.containsObject(view1) {return view1}
+    if (view1Superviews as NSArray).containsObject(view2) {return view2}
+    if (view2Superviews as NSArray).containsObject(view1) {return view1}
     
     // Check for indirect ancestor
     for eachItem in view1Superviews
     {
-        if view2Superviews.containsObject(eachItem) {return eachItem}
+        if (view2Superviews as NSArray).containsObject(eachItem) {return eachItem}
     }
     
     return nil
 }
+
+extension View {
+    func nearestCommonAncestorWithView(view : View) -> (View?)
+    {
+        return NearestCommonViewAncestor(self, view)
+    }
+}
+
+// **************************************
+// MARK: Self-installing Constraints
+// **************************************
 
 // NSLayoutConstraint Extensions
 extension NSLayoutConstraint
@@ -171,31 +144,7 @@ extension NSLayoutConstraint
         
         ncaView!.removeConstraint(self)
     }
-    
-    func refersToView(theView : View) -> Bool
-    {
-        if (self.firstItem === nil)
-        {
-            println("Error: This should never happen. Missing first item")
-            return false
-        }
-
-        if (self.secondItem === nil)
-        {
-            let view : View = self.firstItem as View
-            return (view === theView)
-        }
-        
-        let firstView = self.firstItem as View
-        let secondView = self.secondItem as View
-        
-        if (firstView === theView) {return true}
-        if (secondView === theView) {return true}
-        return false
-    }
 }
-
-// Installation
 
 func InstallConstraints(constraints : NSLayoutConstraint[], priority : Float)
 {
@@ -221,6 +170,35 @@ func RemoveConstraints(constraints : NSLayoutConstraint[])
     {
         if (!constraint.isMemberOfClass(NSLayoutConstraint)) {continue}
         constraint.remove()
+    }
+}
+
+// **************************************
+// MARK: Constraint References
+// **************************************
+
+extension NSLayoutConstraint {
+    
+    func refersToView(theView : View) -> Bool
+    {
+        if (self.firstItem === nil)
+        {
+            println("Error: This should never happen. Missing first item")
+            return false
+        }
+        
+        if (self.secondItem === nil)
+        {
+            let view : View = self.firstItem as View
+            return (view === theView)
+        }
+        
+        let firstView = self.firstItem as View
+        let secondView = self.secondItem as View
+        
+        if (firstView === theView) {return true}
+        if (secondView === theView) {return true}
+        return false
     }
 }
 
@@ -289,12 +267,13 @@ extension View
     {
         return ConstraintsReferencingView(self)
     }
-    
-    func nearestCommonAncestorWithView(view : View) -> (View?)
-    {
-        return NearestCommonViewAncestor(self, view)
-    }
-    
+}
+
+// **************************************
+// MARK: Inspection
+// **************************************
+
+extension View {
     func dumpViewsAtIndent(indent : Int)
     {
         for i in 0..(indent * 4) {print("-")}
@@ -321,44 +300,34 @@ extension View
     }
 }
 
-#if os(iOS)
-extension View
-{
-    // Computed property makes Xcode compilation go boom
-//    var autoLayoutEnabled: Bool {
-//    get {return !self.translatesAutoresizingMaskIntoConstraints()}
-//    set {self.setTranslatesAutoresizingMaskIntoConstraints(!newValue)}
-//    }
-    
-    func autoLayoutEnabled() -> Bool
-    {
-        return !self.translatesAutoresizingMaskIntoConstraints()
+// **************************************
+// MARK: Enabling Auto Layout
+// **************************************
+
+extension View {
+    var autoLayoutEnabled : Bool {
+    get {
+        #if os(iOS)
+            return !self.translatesAutoresizingMaskIntoConstraints()
+            #else
+            return !translatesAutoresizingMaskIntoConstraints
+        #endif
     }
-    
-    func setAutoLayoutEnabled(autoLayoutEnabled : Bool)
-    {
-        self.setTranslatesAutoresizingMaskIntoConstraints(!autoLayoutEnabled)
+    set {
+        #if os(iOS)
+            self.setTranslatesAutoresizingMaskIntoConstraints(!autoLayoutEnabled)
+            #else
+            self.translatesAutoresizingMaskIntoConstraints = !autoLayoutEnabled
+        #endif
+    }
     }
 }
-#elseif os(OSX)
-extension View
-{
-    func autoLayoutEnabled() -> Bool
-    {
-        return !self.translatesAutoresizingMaskIntoConstraints
-    }
 
-    func setAutoLayoutEnabled(autoLayoutEnabled : Bool)
-    {
-        self.translatesAutoresizingMaskIntoConstraints = !autoLayoutEnabled
-    }
-}
-#endif
-
-
+// **************************************
+// MARK: Format Installation
+// **************************************
 
 // Format Installation
-
 func InstallLayoutFormats(formats : NSString[], options : NSLayoutFormatOptions, metrics : NSDictionary, bindings : NSDictionary, priority : Float)
 {
     for format in formats
@@ -368,8 +337,11 @@ func InstallLayoutFormats(formats : NSString[], options : NSLayoutFormatOptions,
     }
 }
 
-// Constraining Sizes
+// **************************************
+// MARK: Sizing
+// **************************************
 
+// Constraining Sizes
 func SizeView(view : View, size : CGSize, priority : Float)
 {
     let metrics = ["width" : size.width, "height" : size.height]
@@ -418,8 +390,11 @@ func ConstrainMaximumViewSize(view : View, size : CGSize, priority : Float)
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
 
-// Constraining Positions
+// **************************************
+// MARK: Positioning
+// **************************************
 
+// Constraining Positions
 func PositionView(view : View, point : CGPoint, priority : Float)
 {
     if (!view.superview) {return}
@@ -448,8 +423,11 @@ func ConstrainViewToSuperview(view : View, inset : Float, priority : Float)
     InstallLayoutFormats(formats, SkipOptions, ["inset":inset], ["view":view], priority)
 }
 
-// Stretching to Superview
+// **************************************
+// MARK: Stretching
+// **************************************
 
+// Stretching to Superview
 func StretchViewHorizontallyToSuperview(view : View, inset : CGFloat, priority : Float)
 {
     if (!view.superview) {return}
@@ -482,8 +460,11 @@ func StretchViewToSuperview(view : View, inset : CGSize, priority : Float)
     }
 }
 
-// Aligning
+// **************************************
+// MARK: Alignment
+// **************************************
 
+// Aligning
 func AlignViewInSuperview(view : View, attribute : NSLayoutAttribute, inset : CGFloat, priority : Float)
 {
     if (!view.superview) {return}
@@ -507,7 +488,6 @@ func AlignViews(priority : Float, view1 : View, view2 : View, attribute : NSLayo
 }
 
 // View to View Layout
-
 func CenterViewInSuperview(view : View, horizontal : Bool, vertical : Bool, priority : Float)
 {
     if (!view.superview) {return}
@@ -554,6 +534,10 @@ func ConstrainViewsWithBindings(priority : Float, format : NSString, bindings : 
     let metrics = NSDictionary()
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
+
+// **************************************
+// MARK: iOS Layout Guides
+// **************************************
 
 // Working with Layout Guides. iOS Only
 #if os(iOS)
@@ -612,43 +596,47 @@ extension UIViewController {
         }
     }
 }
-    
-// Quick Layout
-func LayoutThenCleanup(view : View, layout : Void -> Void)
-{
-    layout()
-    view.layoutIfNeeded()
-    if (view.superview) {view.superview.layoutIfNeeded()}
-    RemoveConstraints(view.externalConstraintReferences())
-}
+#endif
+
+// **************************************
+// MARK: iOS Quick Layout
+// **************************************
+
+#if os(iOS)
+    // Quick Layout
+    func LayoutThenCleanup(view : View, layout : Void -> Void)
+    {
+        layout()
+        view.layoutIfNeeded()
+        if (view.superview) {view.superview.layoutIfNeeded()}
+        RemoveConstraints(view.externalConstraintReferences())
+    }
+#endif
+
+
+// **************************************
+// MARK: iOS Layout Guides
+// **************************************
 
 // Hugging and Resistance (iOS)
 func SetHuggingPriority(view : View, priority : Float)
 {
-    view.setContentHuggingPriority(priority, forAxis: UILayoutConstraintAxis.Horizontal)
-    view.setContentHuggingPriority(priority, forAxis: UILayoutConstraintAxis.Vertical)
-}
-    
-func SetResistancePriority(view : View, priority : Float)
-{
-    view.setContentCompressionResistancePriority(priority, forAxis: UILayoutConstraintAxis.Horizontal)
-    view.setContentCompressionResistancePriority(priority, forAxis: UILayoutConstraintAxis.Vertical)
-}
-
-#else
-    
-// Hugging and Resistance (OS X)
-func SetHuggingPriority(view : View, priority : Float)
-{
-    view.setContentHuggingPriority(priority, forOrientation: NSLayoutConstraintOrientation.Horizontal)
-    view.setContentHuggingPriority(priority, forOrientation: NSLayoutConstraintOrientation.Vertical)
+    #if os(iOS)
+        view.setContentHuggingPriority(priority, forAxis: UILayoutConstraintAxis.Horizontal)
+        view.setContentHuggingPriority(priority, forAxis: UILayoutConstraintAxis.Vertical)
+        #else
+        view.setContentHuggingPriority(priority, forOrientation: NSLayoutConstraintOrientation.Horizontal)
+        view.setContentHuggingPriority(priority, forOrientation: NSLayoutConstraintOrientation.Vertical)
+    #endif
 }
 
 func SetResistancePriority(view : View, priority : Float)
 {
-    view.setContentCompressionResistancePriority(priority, forOrientation: NSLayoutConstraintOrientation.Horizontal)
-    view.setContentCompressionResistancePriority(priority, forOrientation: NSLayoutConstraintOrientation.Vertical)
+    #if os(iOS)
+        view.setContentCompressionResistancePriority(priority, forAxis: UILayoutConstraintAxis.Horizontal)
+        view.setContentCompressionResistancePriority(priority, forAxis: UILayoutConstraintAxis.Vertical)
+        #else
+        view.setContentCompressionResistancePriority(priority, forOrientation: NSLayoutConstraintOrientation.Horizontal)
+        view.setContentCompressionResistancePriority(priority, forOrientation: NSLayoutConstraintOrientation.Vertical)
+    #endif
 }
-
-#endif
-
