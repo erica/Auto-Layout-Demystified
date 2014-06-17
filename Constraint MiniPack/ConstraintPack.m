@@ -249,7 +249,7 @@ NSArray *ConstraintsReferencingView(View *view)
 - (void) dumpViewsAtIndent: (int) indent
 {
     for (int i = 0; i < indent * 4; i++) printf("-");
-    printf("[%s:%0x]", self.class.description.UTF8String, (NSInteger) self);
+    printf("[%s:%0lx]", self.class.description.UTF8String, (long) self);
     if (self.tag != 0)
         printf(" (tag:%0zd)", self.tag);
     printf(" [%0.1f, %0.1f, %0.1f, %0.1f]", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
