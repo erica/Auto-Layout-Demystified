@@ -12,26 +12,29 @@
  */
 
 #import <Foundation/Foundation.h>
-// #import <TargetConditionals.h>
+// #import <TargetConditionals.h> // moved
 
 @import Foundation;
 
 // Imports
 #if TARGET_OS_IPHONE
 @import UIKit;
+#else
+@import Cocoa;
+@import AppKit;
 #endif
 
 // Compatibility
 #if TARGET_OS_IPHONE
-#define View UIView
-#define Color UIColor
-#define Image UIImage
-#define Font UIFont
+    #define View UIView
+    #define Color UIColor
+    #define Image UIImage
+    #define Font UIFont
 #elif TARGET_OS_MAC
-#define View NSView
-#define Color NSColor
-#define Image NSImage
-#define Font NSFont
+    #define View NSView
+    #define Color NSColor
+    #define Image NSImage
+    #define Font NSFont
 #endif
 
 /*
@@ -137,6 +140,14 @@ void SetResistancePriority(View *view, NSUInteger priority);
  */
 #if TARGET_OS_IPHONE
 void LayoutThenCleanup(View *view, void(^layoutBlock)());
+#endif
+
+/*
+ PLACEMENT
+ */
+void PlaceViewInSuperview(UIView *view, NSString *position, CGFloat inseth, CGFloat insetv, CGFloat priority);
+#if TARGET_OS_IPHONE
+void PlaceView(UIViewController *controller, UIView *view, NSString *position, CGFloat inseth, CGFloat insetv, CGFloat priority);
 #endif
 
 // Cleanup

@@ -8,15 +8,15 @@
 
 #import "ConstraintPack.h"
 #if TARGET_OS_IPHONE
-#define View UIView
-#define Color UIColor
-#define Image UIImage
-#define Font UIFont
+    #define View UIView
+    #define Color UIColor
+    #define Image UIImage
+    #define Font UIFont
 #elif TARGET_OS_MAC
-#define View NSView
-#define Color NSColor
-#define Image NSImage
-#define Font NSFont
+    #define View NSView
+    #define Color NSColor
+    #define Image NSImage
+    #define Font NSFont
 #endif
 
 // Return nearest common ancestor between two views
@@ -248,15 +248,20 @@ NSArray *ConstraintsReferencingView(View *view)
 
 - (void) dumpViewsAtIndent: (int) indent
 {
+    printf("\n");
     for (int i = 0; i < indent * 4; i++) printf("-");
-    printf("[%s:%0lx]", self.class.description.UTF8String, (long) self);
+    printf("[%s:%0x]", self.class.description.UTF8String, (unsigned int) self);
     if (self.tag != 0)
         printf(" (tag:%0zd)", self.tag);
     printf(" [%0.1f, %0.1f, %0.1f, %0.1f]", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
     printf(" constraints: %zd stored, %zd references", self.constraints.count, self.constraintReferences.count);
-    
-    
     printf("\n");
+    
+    for (NSLayoutConstraint *c in self.constraintReferences)
+    {
+        for (int i = 0; i < indent * 4; i++) printf("-");
+        printf("* %s (%zd)\n", c.debugDescription.UTF8String, c.priority);
+    }
     
     for (UIView *view in self.subviews)
         [view dumpViewsAtIndent:indent + 1];
@@ -391,7 +396,7 @@ void StretchViewToSuperview(View *view, CGSize inset, NSUInteger priority)
 void AlignViewInSuperview(View *view, NSLayoutAttribute attribute, NSInteger inset, NSUInteger priority)
 {
     if (!view || !view.superview) return;
-    if ([@[@(NSLayoutAttributeBaseline), @(NSLayoutAttributeWidth), @(NSLayoutAttributeHeight), @(NSLayoutAttributeCenterX), @(NSLayoutAttributeCenterY), @(NSLayoutAttributeNotAnAttribute)] containsObject:@(attribute)])
+    if ([@[@(NSLayoutAttributeBaseline), @(NSLayoutAttributeWidth), @(NSLayoutAttributeHeight), @(NSLayoutAttributeNotAnAttribute)] containsObject:@(attribute)])
         return; // Not supported
     
     if ([@[@(NSLayoutAttributeLeft), @(NSLayoutAttributeTop), @(NSLayoutAttributeLeading)] containsObject:@(attribute)])
@@ -488,7 +493,7 @@ void StretchViewToBottomLayoutGuide(UIViewController *controller, View *view, NS
 }
 
 #if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
-// iOS 8 introduces left and right layout guides
+// iOS 8 introduces left and right layout guides. These are typically inset
 void StretchViewToLeftLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority)
 {
     if (!controller || !view) return;
@@ -497,7 +502,7 @@ void StretchViewToLeftLayoutGuide(UIViewController *controller, View *view, NSIn
     
     NSDictionary *metrics = @{@"inset":@(inset)};
     NSDictionary *bindings = NSDictionaryOfVariableBindings(view, leftGuide);
-    NSArray *formats = @[@"V:[leftGuide]-inset-[view]"];
+    NSArray *formats = @[@"H:[leftGuide]-inset-[view]"];
     
     InstallLayoutFormats(formats, 0, metrics, bindings, priority);
 }
@@ -510,29 +515,20 @@ void StretchViewToRightLayoutGuide(UIViewController *controller, View *view, NSI
     
     NSDictionary *metrics = @{@"inset":@(inset)};
     NSDictionary *bindings = NSDictionaryOfVariableBindings(view, rightGuide);
-    NSArray *formats = @[@"V:[view]-inset-[rightGuide]"];
+    NSArray *formats = @[@"H:[view]-inset-[rightGuide]"];
     
     InstallLayoutFormats(formats, 0, metrics, bindings, priority);
 }
 #endif
 
-// iOS 8 introduces left and right layout guides
-#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
-void StretchViewToController(UIViewController *controller, View *view, CGSize inset, NSUInteger priority)
-{
-    StretchViewToLeftLayoutGuide(controller, view, inset.width, priority);
-    StretchViewToRightLayoutGuide(controller, view, inset.width, priority);
-    StretchViewToTopLayoutGuide(controller, view, inset.height, priority);
-    StretchViewToBottomLayoutGuide(controller, view, inset.height, priority);
-}
-#else
+// Right and Left layout guides are not used here as the stretch is to the edges
 void StretchViewToController(UIViewController *controller, View *view, CGSize inset, NSUInteger priority)
 {
     StretchViewHorizontallyToSuperview(view, inset.width, priority);
     StretchViewToTopLayoutGuide(controller, view, inset.height, priority);
     StretchViewToBottomLayoutGuide(controller, view, inset.height, priority);
 }
-#endif
+
 
 @implementation UIViewController (ExtendedLayouts)
 - (BOOL) extendLayoutUnderBars
@@ -588,6 +584,82 @@ void LayoutThenCleanup(View *view, void(^layoutBlock)())
     RemoveConstraints(view.externalConstraintReferences);
 }
 #endif
+
+#pragma mark Placement
+// Place view: tl, tc, tr
+//             cl  cc  cr
+//             bl  bc  br
+// use xx for stretch
+
+void PlaceViewInSuperview(UIView *view, NSString *position, CGFloat inseth, CGFloat insetv, CGFloat priority)
+{
+    if (!position) return;
+    if (position.length != 2) return;
+    
+    if (!view.superview) return;
+    
+    // Participate in Auto Layout
+    view.autoLayoutEnabled = YES;
+    
+    NSString *verticalPosition = [position substringToIndex:1];
+    NSString *horizontalPosition = [position substringFromIndex:1];
+    void (^block)();
+    
+    NSDictionary *actionDictionary =
+    @{
+      @"t" : ^{AlignViewInSuperview(view, NSLayoutAttributeTop, insetv, priority);},
+      @"c" : ^{AlignViewInSuperview(view, NSLayoutAttributeCenterY, insetv, priority);},
+      @"b" : ^{AlignViewInSuperview(view, NSLayoutAttributeBottom, insetv, priority);},
+      @"x" : ^{StretchViewVerticallyToSuperview(view, insetv, priority);}
+      };
+    if ((block = actionDictionary[verticalPosition])) block();
+    
+    actionDictionary =
+    @{
+      @"l" : ^{AlignViewInSuperview(view, NSLayoutAttributeLeading, inseth, priority);},
+      @"c" : ^{AlignViewInSuperview(view, NSLayoutAttributeCenterX, inseth, priority);},
+      @"r" : ^{AlignViewInSuperview(view, NSLayoutAttributeTrailing, inseth, priority);},
+      @"x" : ^{StretchViewHorizontallyToSuperview(view, inseth, priority);}
+      };
+    if ((block = actionDictionary[horizontalPosition])) block();
+}
+
+#if TARGET_OS_IPHONE
+void PlaceView(UIViewController *controller, UIView *view, NSString *position, CGFloat inseth, CGFloat insetv, CGFloat priority)
+{
+    if (!position) return;
+    if (position.length != 2) return;
+
+    // Place if not already placed
+    if (!view.superview)
+        [controller.view addSubview:view];
+    
+    // Participate in Auto Layout
+    view.autoLayoutEnabled = YES;
+    
+    NSString *verticalPosition = [position substringToIndex:1];
+    NSString *horizontalPosition = [position substringFromIndex:1];
+    
+    // Handle stretches with respect to view controller
+    if ([position hasPrefix:@"x"])
+    {
+        StretchViewToTopLayoutGuide(controller, view, insetv, priority);
+        StretchViewToBottomLayoutGuide(controller, view, inseth, priority);
+        verticalPosition = @"-";
+    }
+    
+    if ([position hasSuffix:@"x"])
+    {
+        // Edge to edge. Skips left and right guides as they are inset
+        StretchViewHorizontallyToSuperview(view, inseth, priority);
+        horizontalPosition = @"-";
+    }
+    
+    // Otherwise place
+    PlaceViewInSuperview(view, [NSString stringWithFormat:@"%@%@", verticalPosition, horizontalPosition], inseth, insetv, priority);
+}
+#endif
+
 
 // Cleanup
 #undef View
