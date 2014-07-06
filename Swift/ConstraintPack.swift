@@ -27,7 +27,6 @@ func Superviews(view : View) -> (View[])
 {
     var array : View[] = []
     var currentView = view.superview
-    
     while (currentView != nil)
     {
         array += currentView
@@ -80,13 +79,12 @@ extension NSLayoutConstraint
         }
         
         let firstView = self.firstItem as View
-
         if (self.secondItem === nil)
         {
             firstView.addConstraint(self)
             return true
         }
-        
+
         let secondView = self.secondItem as View
         
         let ncaView = NearestCommonViewAncestor(firstView, secondView)
@@ -189,7 +187,7 @@ extension NSLayoutConstraint {
         
         if (self.secondItem === nil)
         {
-            let view : View = self.firstItem as View
+            let view = self.firstItem as View
             return (view === theView)
         }
         
@@ -303,25 +301,22 @@ extension View {
 // **************************************
 // MARK: Enabling Auto Layout
 // **************************************
-
-extension View {
+#if os(iOS)
+    extension View {
     var autoLayoutEnabled : Bool {
-    get {
-        #if os(iOS)
-            return !self.translatesAutoresizingMaskIntoConstraints()
-            #else
-            return !translatesAutoresizingMaskIntoConstraints
-        #endif
-    }
-    set {
-        #if os(iOS)
-            self.setTranslatesAutoresizingMaskIntoConstraints(!autoLayoutEnabled)
-            #else
-            self.translatesAutoresizingMaskIntoConstraints = !autoLayoutEnabled
-        #endif
+    get {return !self.translatesAutoresizingMaskIntoConstraints()}
+    set {self.setTranslatesAutoresizingMaskIntoConstraints(!newValue)}
     }
     }
-}
+    #else
+    extension View {
+        var autoLayoutEnabled : Bool {
+        get {return self.translatesAutoresizingMaskIntoConstraints == false}
+        set {self.translatesAutoresizingMaskIntoConstraints = !newValue}
+        }
+    }
+#endif
+
 
 // **************************************
 // MARK: Format Installation
@@ -503,7 +498,7 @@ func ConstrainView(format : NSString, view : View, priority : Float)
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
 
-func ConstrainviewPair(format : NSString, view1 : View, view2 : View, priority : Float)
+func ConstrainViewPair(format : NSString, view1 : View, view2 : View, priority : Float)
 {
     let formats = [format]
     let bindings = ["view1" : view1, "view2" : view2]
@@ -581,8 +576,7 @@ func StretchViewToController(controller : UIViewController, view : View, inset :
 {
     StretchViewToTopLayoutGuide(controller, view, NSInteger(inset.height), priority)
     StretchViewToBottomLayoutGuide(controller, view, NSInteger(inset.height), priority)
-    StretchViewToLeftLayoutGuide(controller, view, NSInteger(inset.width), priority)
-    StretchViewToRightLayoutGuide(controller, view, NSInteger(inset.width), priority)
+    StretchViewHorizontallyToSuperview(view, inset.width, priority)
 }
 
 // UIViewController extended layout
@@ -640,3 +634,75 @@ func SetResistancePriority(view : View, priority : Float)
         view.setContentCompressionResistancePriority(priority, forOrientation: NSLayoutConstraintOrientation.Vertical)
     #endif
 }
+
+// --------------------------------------------------
+// MARK: Placement utility
+// --------------------------------------------------
+
+func PlaceViewInSuperview(view : View, position: String, inseth : CGFloat, insetv : CGFloat, priority : Float)
+{
+    if (countElements(position) != 2) {return}
+    if (!view.superview) {return}
+
+//    view.autoLayoutEnabled = true
+//    view.superview.autoLayoutEnabled = true
+    
+    let verticalPosition = position.substringToIndex(1)
+    let horizontalPosition = position.substringFromIndex(1)
+    
+    switch verticalPosition {
+    case "t":
+        AlignViewInSuperview(view, NSLayoutAttribute.Top, insetv, priority)
+    case "c":
+        AlignViewInSuperview(view, NSLayoutAttribute.CenterY, insetv, priority)
+    case "b":
+        AlignViewInSuperview(view, NSLayoutAttribute.Bottom, insetv, priority)
+    case "x":
+        StretchViewVerticallyToSuperview(view, insetv, priority)
+    default:
+        break
+    }
+    
+    switch horizontalPosition {
+        case "l":
+            AlignViewInSuperview(view, NSLayoutAttribute.Leading, inseth, priority)
+        case "c":
+            AlignViewInSuperview(view, NSLayoutAttribute.CenterX, inseth, priority)
+        case "r":
+            AlignViewInSuperview(view, NSLayoutAttribute.Trailing, inseth, priority)
+        case "x":
+            StretchViewHorizontallyToSuperview(view, inseth, priority)
+    default:
+        break
+    }
+}
+
+#if os(iOS)
+func PlaceView(controller : UIViewController, view : UIView, position : String, inseth : CGFloat, insetv : CGFloat, priority : Float)
+{
+    if (countElements(position) != 2) {return}
+    var verticalPosition = position.substringToIndex(1)
+    var horizontalPosition = position.substringFromIndex(1)
+    
+    // Add if needed
+    if (!view.superview) {controller.view.addSubview(view)}
+    
+    // Handle the two stretching cases
+    if (position.hasPrefix("x"))
+    {
+        StretchViewToTopLayoutGuide(controller, view, NSInteger(insetv), priority)
+        StretchViewToBottomLayoutGuide(controller, view, NSInteger(insetv), priority)
+        verticalPosition = "-"
+    }
+    
+    if (position.hasSuffix("x"))
+    {
+        StretchViewHorizontallyToSuperview(view, inseth, priority)
+        horizontalPosition = "-"
+    }
+    
+    // Otherwise just place in superview
+    PlaceViewInSuperview(view, (verticalPosition + horizontalPosition), inseth, insetv, priority)
+}
+#endif
+
