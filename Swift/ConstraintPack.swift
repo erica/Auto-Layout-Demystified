@@ -23,9 +23,9 @@ let SkipOptions = NSLayoutFormatOptions.fromMask(0)
 // **************************************
 
 // Return superviews
-func Superviews(view : View) -> (View[])
+func Superviews(view : View) -> ([View])
 {
-    var array : View[] = []
+    var array : [View] = []
     var currentView = view.superview
     while (currentView != nil)
     {
@@ -144,7 +144,7 @@ extension NSLayoutConstraint
     }
 }
 
-func InstallConstraints(constraints : NSLayoutConstraint[], priority : Float)
+func InstallConstraints(constraints : [NSLayoutConstraint], priority : Float)
 {
     for constraint in constraints
     {
@@ -153,7 +153,7 @@ func InstallConstraints(constraints : NSLayoutConstraint[], priority : Float)
     }
 }
 
-func InstallConstraints(constraints : NSLayoutConstraint[])
+func InstallConstraints(constraints : [NSLayoutConstraint])
 {
     for constraint in constraints
     {
@@ -162,7 +162,7 @@ func InstallConstraints(constraints : NSLayoutConstraint[])
     }
 }
 
-func RemoveConstraints(constraints : NSLayoutConstraint[])
+func RemoveConstraints(constraints : [NSLayoutConstraint])
 {
     for constraint in constraints
     {
@@ -201,15 +201,15 @@ extension NSLayoutConstraint {
 }
 
 // External constraint references
-func ExternalConstraintsReferencingView(view : View) -> (NSLayoutConstraint[])
+func ExternalConstraintsReferencingView(view : View) -> ([NSLayoutConstraint])
 {
     var superviews = Superviews(view)
-    var constraints : NSLayoutConstraint[] = []
+    var constraints : [NSLayoutConstraint] = []
     for superview : View in superviews {
         #if os(iOS)
-            let collection = superview.constraints() as NSLayoutConstraint[] // Thanks Josh Weinberg
+            let collection = superview.constraints() as [NSLayoutConstraint] // Thanks Josh Weinberg
             #else
-            let collection = superview.constraints as NSLayoutConstraint[]
+            let collection = superview.constraints as [NSLayoutConstraint]
         #endif
         for constraint in collection {
             if (constraint.refersToView(view))
@@ -222,13 +222,13 @@ func ExternalConstraintsReferencingView(view : View) -> (NSLayoutConstraint[])
 }
 
 // Internal constraint references
-func InternalConstraintsReferencingView(view : View) -> (NSLayoutConstraint[])
+func InternalConstraintsReferencingView(view : View) -> ([NSLayoutConstraint])
 {
-    var constraints : NSLayoutConstraint[] = []
+    var constraints : [NSLayoutConstraint] = []
     #if os(iOS)
-        let collection = view.constraints() as NSLayoutConstraint[] // Thanks Josh Weinberg
+        let collection = view.constraints() as [NSLayoutConstraint] // Thanks Josh Weinberg
         #else
-        let collection = view.constraints as NSLayoutConstraint[]
+        let collection = view.constraints as [NSLayoutConstraint]
     #endif
     for constraint in collection
     {
@@ -242,7 +242,7 @@ func InternalConstraintsReferencingView(view : View) -> (NSLayoutConstraint[])
 }
 
 // Internal + External
-func ConstraintsReferencingView(view : View) -> (NSLayoutConstraint[])
+func ConstraintsReferencingView(view : View) -> ([NSLayoutConstraint])
 {
     let internal = InternalConstraintsReferencingView(view)
     let external = ExternalConstraintsReferencingView(view)
@@ -251,17 +251,17 @@ func ConstraintsReferencingView(view : View) -> (NSLayoutConstraint[])
 
 extension View
 {
-    func externalConstraintReferences() -> (NSLayoutConstraint[])
+    func externalConstraintReferences() -> ([NSLayoutConstraint])
     {
         return ExternalConstraintsReferencingView(self)
     }
     
-    func internalConstraintReferences() -> (NSLayoutConstraint[])
+    func internalConstraintReferences() -> ([NSLayoutConstraint])
     {
         return InternalConstraintsReferencingView(self)
     }
     
-    func constraintReferences() -> (NSLayoutConstraint[])
+    func constraintReferences() -> ([NSLayoutConstraint])
     {
         return ConstraintsReferencingView(self)
     }
@@ -274,7 +274,7 @@ extension View
 extension View {
     func dumpViewsAtIndent(indent : Int)
     {
-        for i in 0..(indent * 4) {print("-")}
+        for i in 0..<(indent * 4) {print("-")}
         print("[\(self.description)]")
         if (self.tag != 0) {print(" (tag:\(self.tag))")}
         #if os(iOS)
@@ -286,7 +286,7 @@ extension View {
         print(" \(self.constraintReferences().count) references")
         println()
         
-        for subview in (self.subviews as View[])
+        for subview in (self.subviews as [View])
         {
             subview.dumpViewsAtIndent(indent + 1)
         }
@@ -323,11 +323,11 @@ extension View {
 // **************************************
 
 // Format Installation
-func InstallLayoutFormats(formats : NSString[], options : NSLayoutFormatOptions, metrics : NSDictionary, bindings : NSDictionary, priority : Float)
+func InstallLayoutFormats(formats : [NSString], options : NSLayoutFormatOptions, metrics : NSDictionary, bindings : NSDictionary, priority : Float)
 {
     for format in formats
     {
-        let constraints = NSLayoutConstraint.constraintsWithVisualFormat(format, options: options, metrics: metrics, views: bindings) as NSLayoutConstraint[]
+        let constraints = NSLayoutConstraint.constraintsWithVisualFormat(format, options: options, metrics: metrics, views: bindings) as [NSLayoutConstraint]
         InstallConstraints(constraints, priority)
     }
 }
@@ -341,7 +341,7 @@ func SizeView(view : View, size : CGSize, priority : Float)
 {
     let metrics = ["width" : size.width, "height" : size.height]
     let bindings = ["view" : view]
-    var formats : String[] = []
+    var formats : [String] = []
     if (size.width != SkipConstraint)
     {
         formats += "H:[view(==width)]"
@@ -357,7 +357,7 @@ func ConstrainMinimumViewSize(view : View, size : CGSize, priority : Float)
 {
     let metrics = ["width" : size.width, "height" : size.height]
     let bindings = ["view" : view]
-    var formats : String[] = []
+    var formats : [String] = []
     if (size.width != SkipConstraint)
     {
         formats += "H:[view(>=width)]"
@@ -373,7 +373,7 @@ func ConstrainMaximumViewSize(view : View, size : CGSize, priority : Float)
 {
     let metrics = ["width" : size.width, "height" : size.height]
     let bindings = ["view" : view]
-    var formats : String[] = []
+    var formats : [String] = []
     if (size.width != SkipConstraint)
     {
         formats += "H:[view(<=width)]"
@@ -395,7 +395,7 @@ func PositionView(view : View, point : CGPoint, priority : Float)
     if (!view.superview) {return}
     let metrics = ["hLoc" : point.x, "vLoc" : point.y]
     let bindings = ["view" : view]
-    var formats : String[] = []
+    var formats : [String] = []
     if (point.x != SkipConstraint)
     {
         formats += "H:|-hLoc-[view]"
@@ -609,7 +609,7 @@ extension UIViewController {
 
 
 // **************************************
-// MARK: iOS Layout Guides
+// MARK: Hug / Resist
 // **************************************
 
 // Hugging and Resistance (iOS)
@@ -680,6 +680,8 @@ func PlaceViewInSuperview(view : View, position: String, inseth : CGFloat, inset
 #if os(iOS)
 func PlaceView(controller : UIViewController, view : UIView, position : String, inseth : CGFloat, insetv : CGFloat, priority : Float)
 {
+    view.autoLayoutEnabled = true
+    
     if (countElements(position) != 2) {return}
     var verticalPosition = position.substringToIndex(1)
     var horizontalPosition = position.substringFromIndex(1)
