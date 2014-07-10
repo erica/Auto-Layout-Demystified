@@ -20,9 +20,11 @@ import Foundation
     typealias Font = UIFont
     typealias Color = UIColor
     typealias Image = UIImage
+    typealias BezierPath = UIBezierPath
     #else
     typealias View = NSView
     typealias Font = NSFont
     typealias Color = NSColor
     typealias Image = NSImage
+    typealias BezierPath = NSBezierPath
 #endif

@@ -301,19 +301,24 @@ extension View {
 // **************************************
 // MARK: Enabling Auto Layout
 // **************************************
+
+// NOTE: THESE EXTENSIONS MAY COMPILER ERROR IN BETA 3 WHEN USED. RADAR # 17629009
+// It is the setter that's the problem and even putting in an empty {} setter causes compiler errors if called
+// Update: error seems tied to using these from another file
+
 #if os(iOS)
     extension View {
-    var autoLayoutEnabled : Bool {
-    get {return !self.translatesAutoresizingMaskIntoConstraints()}
-    set {self.setTranslatesAutoresizingMaskIntoConstraints(!newValue)}
-    }
+        var autoLayoutEnabled : Bool {
+        get {return !self.translatesAutoresizingMaskIntoConstraints()}
+        set {self.setTranslatesAutoresizingMaskIntoConstraints(!newValue)}
+        }
     }
     #else
     extension View {
-        var autoLayoutEnabled : Bool {
-        get {return self.translatesAutoresizingMaskIntoConstraints == false}
-        set {self.translatesAutoresizingMaskIntoConstraints = !newValue}
-        }
+    var autoLayoutEnabled : Bool {
+    get {return self.translatesAutoresizingMaskIntoConstraints == false}
+    set {self.translatesAutoresizingMaskIntoConstraints = !newValue}
+    }
     }
 #endif
 
@@ -506,22 +511,23 @@ func ConstrainViewPair(format : NSString, view1 : View, view2 : View, priority :
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
 
-func ConstrainViewArray(priority : Float, format : NSString, viewArray : NSArray)
+func ConstrainViewArray(priority : Float, format : NSString, viewArray : [View])
 {
     // Views are named view1, view2, view3...
-
+    
     let formats = [format]
-    let metrics = NSDictionary()
-    var bindings = NSMutableDictionary()
+    let metrics = [String:AnyObject]()
+    var bindings = [String:View]()
     var index : Int = 1 // start at view1
-    for eachViewItem : AnyObject in viewArray
+    for eachViewItem in viewArray
     {
         let view = eachViewItem as View
-        let key = "view" + "\(index)"
+        let key = "view" + "\(index++)" // Thanks ilyannn
         bindings[key] = view
     }
     InstallLayoutFormats(formats, SkipOptions, metrics, bindings, priority)
 }
+
 
 func ConstrainViewsWithBindings(priority : Float, format : NSString, bindings : NSDictionary)
 {
