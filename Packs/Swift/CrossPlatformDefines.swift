@@ -28,3 +28,9 @@ import Foundation
     typealias Image = NSImage
     typealias BezierPath = NSBezierPath
 #endif
+
+#if os(iOS)
+    typealias LayoutPriority = UILayoutPriority
+    #else
+    typealias LayoutPriority = NSLayoutPriority
+#endif

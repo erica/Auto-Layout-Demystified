@@ -55,12 +55,15 @@ View *NearestCommonViewAncestor(View *view1, View *view2)
     return nil;
 }
 
+// For iOS 8 and later, you can simply set a constraint's active property to YES and it will self-install. Set active to NO and it uninstalls.
+
 #pragma mark - NSLayoutConstraint Constraint Pack Category
 @implementation NSLayoutConstraint (ConstraintPack)
 
 // Install constraints to their natural target, the nearest common ancestor
 - (BOOL) install
 {
+#if __IPHONE_OS_VERSION_MIN_REQUIRED < 80000
     View *firstView = (View *) self.firstItem;
     View *secondView = (View *) self.secondItem;
     
@@ -81,6 +84,10 @@ View *NearestCommonViewAncestor(View *view1, View *view2)
     
     [view addConstraint:self];
     return YES;
+#else
+    self.active = YES;
+    return YES;
+#endif
 }
 
 - (BOOL) installWithPriority: (float) priority
@@ -92,6 +99,7 @@ View *NearestCommonViewAncestor(View *view1, View *view2)
 // Remove constraints from their natural target
 - (void) remove
 {
+#if __IPHONE_OS_VERSION_MIN_REQUIRED < 80000
     if (![self.class isEqual:[NSLayoutConstraint class]])
     {
         NSLog(@"Error: Can only uninstall NSLayoutConstraint. %@ is an invalid class.", self.class.description);
@@ -111,6 +119,9 @@ View *NearestCommonViewAncestor(View *view1, View *view2)
     
     // If the constraint not on view, this is a no-op
     [view removeConstraint:self];
+#else
+    self.active = NO;
+#endif
 }
 
 // Test constraint against view
@@ -246,7 +257,7 @@ NSArray *ConstraintsReferencingView(View *view)
     self.translatesAutoresizingMaskIntoConstraints = !autoLayoutEnabled;
 }
 
-- (void) dumpViewsAtIndent: (int) indent
+- (void) dumpViewReportAtIndent: (int) indent
 {
     printf("\n");
     for (int i = 0; i < indent * 4; i++) printf("-");
@@ -263,13 +274,13 @@ NSArray *ConstraintsReferencingView(View *view)
         printf("* %s (%zd)\n", c.debugDescription.UTF8String, c.priority);
     }
     
-    for (UIView *view in self.subviews)
-        [view dumpViewsAtIndent:indent + 1];
+    for (View *view in self.subviews)
+        [view dumpViewReportAtIndent:indent + 1];
 }
 
-- (void) dumpViews
+- (void) dumpViewReport
 {
-    [self dumpViewsAtIndent:0];
+    [self dumpViewReportAtIndent:0];
 }
 @end
 
@@ -283,19 +294,6 @@ void InstallLayoutFormats(NSArray *formats, NSLayoutFormatOptions options, NSDic
     }
 }
 
-
-#pragma mark - Debugging
-// Keep view within superview, usually apply with 1 priority
-void ConstrainViewToSuperview(View *view, CGFloat inset, NSUInteger priority)
-{
-    if (!view || !view.superview) return;
-    NSArray *formats = @[
-                         @"H:|->=inset-[view]",
-                         @"H:[view]->=inset-|",
-                         @"V:|->=inset-[view]",
-                         @"V:[view]->=inset-|"];
-    InstallLayoutFormats(formats, 0, @{@"inset":@(inset)}, @{@"view":view}, priority);
-}
 
 #pragma mark - Single View Layout
 void ConstrainMinimumViewSize(View *view, CGSize size,  NSUInteger  priority)
@@ -492,36 +490,8 @@ void StretchViewToBottomLayoutGuide(UIViewController *controller, View *view, NS
     InstallLayoutFormats(formats, 0, metrics, bindings, priority);
 }
 
-#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
-// iOS 8 introduces left and right layout guides. These are typically inset
-void StretchViewToLeftLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority)
-{
-    if (!controller || !view) return;
-    
-    id leftGuide = controller.leftLayoutGuide;
-    
-    NSDictionary *metrics = @{@"inset":@(inset)};
-    NSDictionary *bindings = NSDictionaryOfVariableBindings(view, leftGuide);
-    NSArray *formats = @[@"H:[leftGuide]-inset-[view]"];
-    
-    InstallLayoutFormats(formats, 0, metrics, bindings, priority);
-}
+// Guides are back to top and bottom. Left and right are dropped. New attributes are left, right, top, bottom, leading, trailing margins and x/y centers within margins
 
-void StretchViewToRightLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority)
-{
-    if (!controller || !view) return;
-    
-    id rightGuide = controller.rightLayoutGuide;
-    
-    NSDictionary *metrics = @{@"inset":@(inset)};
-    NSDictionary *bindings = NSDictionaryOfVariableBindings(view, rightGuide);
-    NSArray *formats = @[@"H:[view]-inset-[rightGuide]"];
-    
-    InstallLayoutFormats(formats, 0, metrics, bindings, priority);
-}
-#endif
-
-// Right and Left layout guides are not used here as the stretch is to the edges
 void StretchViewToController(UIViewController *controller, View *view, CGSize inset, NSUInteger priority)
 {
     StretchViewHorizontallyToSuperview(view, inset.width, priority);
@@ -586,12 +556,26 @@ void LayoutThenCleanup(View *view, void(^layoutBlock)())
 #endif
 
 #pragma mark Placement
+
+// Keep view within superview, usually apply with 1 priority
+void ConstrainViewToSuperview(View *view, CGFloat inset, NSUInteger priority)
+{
+    if (!view || !view.superview) return;
+    NSArray *formats = @[
+                         @"H:|->=inset-[view]",
+                         @"H:[view]->=inset-|",
+                         @"V:|->=inset-[view]",
+                         @"V:[view]->=inset-|"];
+    InstallLayoutFormats(formats, 0, @{@"inset":@(inset)}, @{@"view":view}, priority);
+}
+
 // Place view: tl, tc, tr
 //             cl  cc  cr
 //             bl  bc  br
 // use xx for stretch
+// use -- to skip vertical or horizontal
 
-void PlaceViewInSuperview(UIView *view, NSString *position, CGFloat inseth, CGFloat insetv, CGFloat priority)
+void PlaceViewInSuperview(View *view, NSString *position, CGFloat inseth, CGFloat insetv, CGFloat priority)
 {
     if (!position) return;
     if (position.length != 2) return;
@@ -660,6 +644,93 @@ void PlaceView(UIViewController *controller, UIView *view, NSString *position, C
 }
 #endif
 
+#define TrimString(_string_) ([_string_ stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]])
+
+void AddConstraint(NSString *request, View *view1, View * view2, CGFloat m, CGFloat c, NSInteger priority)
+{
+    NSArray *components = @[];
+    for (NSString *separator in @[@".", @" "])
+    {
+        components = [request componentsSeparatedByString:separator];
+        if (components.count == 3) break;
+    }
+
+    if (components.count != 3)
+    {
+        for (NSString *separator in @[@"<=", @"==", @">=", @"<", @"=", @">"])
+        {
+            components = [request componentsSeparatedByString:separator];
+            if (components.count == 2)
+            {
+                components = @[components[0], separator, components[1]];
+                break;
+            }
+        }
+    }
+    
+    if (components.count != 3)
+    {
+        NSLog(@"AddConstraint format error: %@", request);
+        return;
+    }
+    
+    NSString *firstAttributeString = TrimString(components[0]).lowercaseString;
+    NSString *secondAttributeString = TrimString(components[2]).lowercaseString;
+    NSString *relationString = [TrimString(components[1]) substringWithRange:NSMakeRange(0, 1)].lowercaseString;
+    
+    NSDictionary *attributes = @{
+                                 @"left":@(NSLayoutAttributeLeft),
+                                 @"right":@(NSLayoutAttributeRight),
+                                 @"top":@(NSLayoutAttributeTop),
+                                 @"bottom":@(NSLayoutAttributeBottom),
+                                 @"leading":@(NSLayoutAttributeLeading),
+                                 @"trailing":@(NSLayoutAttributeTrailing),
+                                 @"width":@(NSLayoutAttributeWidth),
+                                 @"height":@(NSLayoutAttributeHeight),
+                                 @"centerx":@(NSLayoutAttributeCenterX),
+                                 @"centery":@(NSLayoutAttributeCenterY),
+                                 
+#if TARGET_OS_IPHONE && (__IPHONE_OS_VERSION_MIN_REQUIRED >= 80000)
+                                 @"leftmargin":@(NSLayoutAttributeLeftMargin),
+                                 @"rightmargin":@(NSLayoutAttributeRightMargin),
+                                 @"topmargin":@(NSLayoutAttributeTopMargin),
+                                 @"bottommargin":@(NSLayoutAttributeBottomMargin),
+                                 @"leadingmargin":@(NSLayoutAttributeLeadingMargin),
+                                 @"trailingmargin":@(NSLayoutAttributeTrailingMargin),
+                                 @"centerxmargin":@(NSLayoutAttributeCenterXWithinMargins),
+                                 @"centerymargin":@(NSLayoutAttributeCenterYWithinMargins),
+#endif
+                                 @"baseline":@(NSLayoutAttributeBaseline),
+#if TARGET_OS_IPHONE && (__IPHONE_OS_VERSION_MIN_REQUIRED >= 80000)
+                                 @"firstbaseline":@(NSLayoutAttributeFirstBaseline),
+                                 @"lastbaseline":@(NSLayoutAttributeLastBaseline),
+#endif
+                                 @"notanattribute":@(NSLayoutAttributeNotAnAttribute),
+                                 @"_":@(NSLayoutAttributeNotAnAttribute),
+                                 @"_naa_":@(NSLayoutAttributeNotAnAttribute),
+                                 @"skip":@(NSLayoutAttributeNotAnAttribute),
+                                 };
+    
+    NSDictionary *relations = @{@"<":@(NSLayoutRelationLessThanOrEqual),
+                                @"=":@(NSLayoutRelationEqual),
+                                @">":@(NSLayoutRelationGreaterThanOrEqual)};
+    
+    NSLayoutAttribute firstAttribute = [attributes[firstAttributeString] integerValue];
+    NSLayoutAttribute secondAttribute = [attributes[secondAttributeString] integerValue];
+    NSLayoutRelation relation = [relations[relationString] integerValue];
+    
+    NSLayoutConstraint *constraint = [NSLayoutConstraint
+                                      constraintWithItem:view1
+                                      attribute:firstAttribute
+                                      relatedBy:relation
+                                      toItem:view2
+                                      attribute:secondAttribute
+                                      multiplier:m
+                                      constant:c];
+    [constraint installWithPriority:priority];
+}
+
+#undef TrimString
 
 // Cleanup
 #undef View

@@ -34,9 +34,25 @@
         case NSLayoutAttributeTrailing: return @"trailing";
         case NSLayoutAttributeWidth: return @"width";
         case NSLayoutAttributeHeight: return @"height";
+            
         case NSLayoutAttributeCenterX: return @"centerX";
         case NSLayoutAttributeCenterY: return @"centerY";
         case NSLayoutAttributeBaseline: return @"baseline";
+            
+#if TARGET_OS_IPHONE && (__IPHONE_OS_VERSION_MIN_REQUIRED >= 80000)
+        case NSLayoutAttributeFirstBaseline: return @"firstBaseline";
+        case NSLayoutAttributeLastBaseline: return @"lastBaseline";
+
+        case NSLayoutAttributeLeftMargin: return @"leftMargin";
+        case NSLayoutAttributeRightMargin: return @"rightMargin";
+        case NSLayoutAttributeTopMargin: return @"topMargin";
+        case NSLayoutAttributeBottomMargin: return @"bottomMargin";
+        case NSLayoutAttributeLeadingMargin: return @"leadingMargin";
+        case NSLayoutAttributeTrailingMargin: return @"trailingMargin";
+        case NSLayoutAttributeCenterXWithinMargins: return @"centerXWithinMargins";
+        case NSLayoutAttributeCenterYWithinMargins: return @"centerYWithinMargins";
+#endif
+
         case NSLayoutAttributeNotAnAttribute:
         default: return @"not-an-attribute";
     }
@@ -57,6 +73,11 @@
         case NSLayoutFormatAlignAllCenterX: return @"CenterX Alignment";
         case NSLayoutFormatAlignAllCenterY: return @"CenterY Alignment";
         case NSLayoutFormatAlignAllBaseline: return @"Baseline Alignment";
+            
+#if TARGET_OS_IPHONE && (__IPHONE_OS_VERSION_MIN_REQUIRED >= 80000)
+        case NSLayoutFormatAlignAllFirstBaseline: return @"First Baseline Alignment";
+        case NSLayoutAttributeLastBaseline: return @"Last Baseline Alignment";
+#endif
         default:
             break;
     }
@@ -339,10 +360,11 @@
     // supported by visual constraints
     if (IsVerticalAttribute(self.firstAttribute) != IsVerticalAttribute(self.secondAttribute))
         return nil;
-    
+
+    // Not important from iOS 8 forward
     // Must have common ancestor. Illegal otherwise
-    if (!([firstView nearestCommonAncestorWithView:secondView]))
-        return nil;
+//    if (!([firstView nearestCommonAncestorWithView:secondView]))
+//        return nil;
     
     // Odd multipliers not supported -- although easily added for odd cases
     // but not by current visual constraints.
@@ -911,7 +933,7 @@
         View *secondView = (View *) constraint.secondItem;
 
         // List each likely owner (guaranteed if install)
-        View *nca = [firstView nearestCommonAncestorWithView:secondView];
+        View *nca = NearestCommonViewAncestor(firstView, secondView);
         if (!nca) continue;
 
         // List each constraint

@@ -4,11 +4,13 @@
  
  */
 
-#import <Foundation/Foundation.h>
+@import Foundation;
 // Compatibility
 #if TARGET_OS_IPHONE
+@import UIKit;
 #define View UIView
 #elif TARGET_OS_MAC
+@import AppKit;
 #define View NSView
 #endif
 

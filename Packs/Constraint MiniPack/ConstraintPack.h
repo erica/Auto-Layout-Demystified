@@ -11,17 +11,12 @@
  Allow constraint utilities to work cross-platform
  */
 
-#import <Foundation/Foundation.h>
-// #import <TargetConditionals.h> // moved
-
 @import Foundation;
-
-// Imports
 #if TARGET_OS_IPHONE
-@import UIKit;
+    @import UIKit;
 #else
-@import Cocoa;
-@import AppKit;
+    @import Cocoa;
+    @import AppKit;
 #endif
 
 // Compatibility
@@ -45,8 +40,14 @@
 #define SkipConstraint  (CGRectNull.origin.x)
 
 /*
+ UTILITY
+ */
+View *NearestCommonViewAncestor(View *view1, View *view2);
+
+/*
  SELF-INSTALLING CONSTRAINTS
  Constraints install to their natural destination
+ Self-install is not needed in iOS 8 and later
  */
 @interface NSLayoutConstraint (ConstraintPack)
 - (BOOL) install;
@@ -70,14 +71,8 @@ void RemoveConstraints(NSArray *constraints);
 @property (nonatomic, readonly) NSArray *constraintReferences;
 @property (nonatomic) BOOL autoLayoutEnabled;
 - (View *) nearestCommonAncestorWithView: (View *) view;
-- (void) dumpViews;
+- (void) dumpViewReport;
 @end
-
-/*
- DEBUGGING
- */
-// Keep view within superview
-void ConstrainViewToSuperview(View *view, CGFloat inset, NSUInteger priority);
 
 /*
  SINGLE VIEW LAYOUT
@@ -117,12 +112,6 @@ void ConstrainViewsWithBinding(NSUInteger priority, NSString *formatString, NSDi
 void StretchViewToTopLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority);
 void StretchViewToBottomLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority);
 
-#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
-// iOS 8 and later only
-void StretchViewToLeftLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority);
-void StretchViewToRightLayoutGuide(UIViewController *controller, View *view, NSInteger inset, NSUInteger priority);
-#endif
-
 void StretchViewToController(UIViewController *controller, View *view, CGSize inset, NSUInteger priority);
 @interface UIViewController (ExtendedLayouts)
 @property (nonatomic) BOOL extendLayoutUnderBars;
@@ -145,10 +134,12 @@ void LayoutThenCleanup(View *view, void(^layoutBlock)());
 /*
  PLACEMENT
  */
-void PlaceViewInSuperview(UIView *view, NSString *position, CGFloat inseth, CGFloat insetv, CGFloat priority);
+void ConstrainViewToSuperview(View *view, CGFloat inset, NSUInteger priority);
+void PlaceViewInSuperview(View *view, NSString *position, CGFloat inseth, CGFloat insetv, CGFloat priority);
 #if TARGET_OS_IPHONE
 void PlaceView(UIViewController *controller, UIView *view, NSString *position, CGFloat inseth, CGFloat insetv, CGFloat priority);
 #endif
+void AddConstraint(NSString *request, View *view1, View * view2, CGFloat m, CGFloat c, NSInteger priority);
 
 // Cleanup
 #undef View

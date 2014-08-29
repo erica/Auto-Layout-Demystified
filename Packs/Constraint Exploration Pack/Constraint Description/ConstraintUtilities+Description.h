@@ -27,16 +27,40 @@ typedef enum
 } ConstraintSourceType;
 
 #define IsSizeAttribute(ATTRIBUTE) [@[@(NSLayoutAttributeWidth), @(NSLayoutAttributeHeight)] containsObject:@(ATTRIBUTE)]
+
+#if TARGET_OS_IPHONE && (__IPHONE_OS_VERSION_MIN_REQUIRED >= 80000)
+#define IsCenterAttribute(ATTRIBUTE) [@[@(NSLayoutAttributeCenterX), @(NSLayoutAttributeCenterY), @(NSLayoutAttributeCenterXWithinMargins), @(NSLayoutAttributeCenterYWithinMargins)] containsObject:@(ATTRIBUTE)]
+#else
 #define IsCenterAttribute(ATTRIBUTE) [@[@(NSLayoutAttributeCenterX), @(NSLayoutAttributeCenterY)] containsObject:@(ATTRIBUTE)]
+#endif
+
+#if TARGET_OS_IPHONE && (__IPHONE_OS_VERSION_MIN_REQUIRED >= 80000)
+#define IsEdgeAttribute(ATTRIBUTE) [@[@(NSLayoutAttributeLeft), @(NSLayoutAttributeRight), @(NSLayoutAttributeTop), @(NSLayoutAttributeBottom), @(NSLayoutAttributeLeading), @(NSLayoutAttributeTrailing), @(NSLayoutAttributeBaseline), @(NSLayoutAttributeFirstBaseline), @(NSLayoutAttributeLeftMargin), @(NSLayoutAttributeRightMargin), @(NSLayoutAttributeTopMargin), @(NSLayoutAttributeBottomMargin), @(NSLayoutAttributeLeadingMargin), @(NSLayoutAttributeTrailingMargin)] containsObject:@(ATTRIBUTE)]
+#else
 #define IsEdgeAttribute(ATTRIBUTE) [@[@(NSLayoutAttributeLeft), @(NSLayoutAttributeRight), @(NSLayoutAttributeTop), @(NSLayoutAttributeBottom), @(NSLayoutAttributeLeading), @(NSLayoutAttributeTrailing), @(NSLayoutAttributeBaseline)] containsObject:@(ATTRIBUTE)]
+#endif
+
+#if TARGET_OS_IPHONE && (__IPHONE_OS_VERSION_MIN_REQUIRED >= 80000)
+#define isMarginAttribute(ATTRIBUTE) [@[@(NSLayoutAttributeLeftMargin), @(NSLayoutAttributeRightMargin), @(NSLayoutAttributeTopMargin), @(NSLayoutAttributeBottomMargin), @(NSLayoutAttributeLeadingMargin), @(NSLayoutAttributeTrailingMargin), @(NSLayoutAttributeCenterXWithinMargins), @(NSLayoutAttributeCenterYWithinMargins)] containsObject:@(ATTRIBUTE)]
+#endif
+
 #define IsLocationAttribute(ATTRIBUTE) (IsEdgeAttribute(ATTRIBUTE) || IsCenterAttribute(ATTRIBUTE))
 
+#if TARGET_OS_IPHONE && (__IPHONE_OS_VERSION_MIN_REQUIRED >= 80000)
+#define IsHorizontalAttribute(ATTRIBUTE) [@[@(NSLayoutAttributeLeft), @(NSLayoutAttributeRight), @(NSLayoutAttributeLeading), @(NSLayoutAttributeTrailing), @(NSLayoutAttributeCenterX), @(NSLayoutAttributeWidth), @(NSLayoutAttributeLeftMargin), @(NSLayoutAttributeRightMargin), @(NSLayoutAttributeLeadingMargin), @(NSLayoutAttributeTrailingMargin), @(NSLayoutAttributeCenterXWithinMargins)] containsObject:@(ATTRIBUTE)]
+#else
 #define IsHorizontalAttribute(ATTRIBUTE) [@[@(NSLayoutAttributeLeft), @(NSLayoutAttributeRight), @(NSLayoutAttributeLeading), @(NSLayoutAttributeTrailing), @(NSLayoutAttributeCenterX), @(NSLayoutAttributeWidth)] containsObject:@(ATTRIBUTE)]
+#endif
+
+#if TARGET_OS_IPHONE && (__IPHONE_OS_VERSION_MIN_REQUIRED >= 80000)
+#define IsVerticalAttribute(ATTRIBUTE) [@[@(NSLayoutAttributeTop), @(NSLayoutAttributeBottom), @(NSLayoutAttributeCenterY), @(NSLayoutAttributeHeight), @(NSLayoutAttributeBaseline), @(NSLayoutAttributeFirstBaseline), @(NSLayoutAttributeTopMargin), @(NSLayoutAttributeBottomMargin), @(NSLayoutAttributeCenterYWithinMargins)] containsObject:@(ATTRIBUTE)]
+#else
 #define IsVerticalAttribute(ATTRIBUTE) [@[@(NSLayoutAttributeTop), @(NSLayoutAttributeBottom), @(NSLayoutAttributeCenterY), @(NSLayoutAttributeHeight), @(NSLayoutAttributeBaseline)] containsObject:@(ATTRIBUTE)]
+#endif
 
 #define IsHorizontalAlignment(ALIGNMENT) [@[@(NSLayoutFormatAlignAllLeft), @(NSLayoutFormatAlignAllRight), @(NSLayoutFormatAlignAllLeading), @(NSLayoutFormatAlignAllTrailing), @(NSLayoutFormatAlignAllCenterX), ] containsObject:@(ALIGNMENT)]
-#define IsVerticalAlignment(ALIGNMENT) [@[@(NSLayoutFormatAlignAllTop), @(NSLayoutFormatAlignAllBottom), @(NSLayoutFormatAlignAllCenterY), @(NSLayoutFormatAlignAllBaseline), ] containsObject:@(ALIGNMENT)]
 
+#define IsVerticalAlignment(ALIGNMENT) [@[@(NSLayoutFormatAlignAllTop), @(NSLayoutFormatAlignAllBottom), @(NSLayoutFormatAlignAllCenterY), @(NSLayoutFormatAlignAllBaseline), @(NSLayoutFormatAlignAllFirstBaseline), @(NSLayoutAttributeLastBaseline)] containsObject:@(ALIGNMENT)]
 
 /*
  
