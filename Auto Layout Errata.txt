@@ -1,5 +1,12 @@
 Auto Layout Errata
 
+Chapter 1, Missing Views with Inconsistent Rules, page 14
+
+In the second of the two constraints at the top of the page, the first item should be View B and the second should be View A to match the description "View B is twice the width of View A":
+
+constraint = [NSLayoutConstraint constraintWithItem:viewB attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:viewA attribute:NSLayoutAttributeWidth multiplier:2.0f constant:0.0f];
+Thanks, Matt Johnson
+
 Chapter 1, Exercise 3 Page 29 and Answers to Exercises page 241
 
 The references to view after the first line of the example should read testView to match the allocated view. (Thanks John Lindwall)
