@@ -1,13 +1,12 @@
-//
-//  CrossPlatformDefines.swift
-//  SwiftWorld
-//
-//  Created by Erica Sadun on 6/10/14.
-//  Copyright (c) 2014 Erica Sadun. All rights reserved.
-//
+/*
+
+ http://ericasadun.com
+
+*/
 
 import Foundation
 
+// Frameworks
 #if os(iOS)
     import UIKit
     #else
@@ -15,22 +14,24 @@ import Foundation
     import AppKit
 #endif
 
+// UIKit/Cocoa Classes
 #if os(iOS)
-    typealias View = UIView
-    typealias Font = UIFont
-    typealias Color = UIColor
-    typealias Image = UIImage
-    typealias BezierPath = UIBezierPath
+    public typealias View = UIView
+    public typealias Font = UIFont
+    public typealias Color = UIColor
+    public typealias Image = UIImage
+    public typealias BezierPath = UIBezierPath
     #else
-    typealias View = NSView
-    typealias Font = NSFont
-    typealias Color = NSColor
-    typealias Image = NSImage
-    typealias BezierPath = NSBezierPath
+    public typealias View = NSView
+    public typealias Font = NSFont
+    public typealias Color = NSColor
+    public typealias Image = NSImage
+    public typealias BezierPath = NSBezierPath
 #endif
 
+// Auto Layout
 #if os(iOS)
-    typealias LayoutPriority = UILayoutPriority
+    public typealias LayoutPriority = UILayoutPriority
     #else
-    typealias LayoutPriority = NSLayoutPriority
+    public typealias LayoutPriority = NSLayoutPriority
 #endif
