@@ -23,11 +23,11 @@ public let SkipOptions = NSLayoutFormatOptions(rawValue: 0)
 // MARK: Convenience
 // **************************************
 
-public extension UIView {
-    public func addSubviews(views : UIView...) {
+public extension View {
+    public func addSubviews(views : View...) {
         for eachView in views {
             addSubview(eachView)
-            eachView.setTranslatesAutoresizingMaskIntoConstraints(false)
+            eachView.autoLayoutEnabled = true
         }
     }
 }
@@ -293,32 +293,32 @@ public func CenterViewInSuperview(view : View, horizontal : Bool, vertical : Boo
 }
 
 /// Constrain several views at once. Views are named view1, view2, view3...
-public func ConstrainViews(priority : LayoutPriority, format : String, metrics : [String : AnyObject], views : [UIView]) {
+public func ConstrainViews(priority : LayoutPriority, format : String, metrics : [String : AnyObject], views : [View]) {
     
     // At least one view
     if count(views) == 0 {return}
     
     // Install view names to bindings
-    var bindings = [String : UIView]()
+    var bindings = [String : View]()
     bindings["view"] = views.first
     for (index, view) in enumerate(views) {
         bindings["view\(index+1)"] = view
-        view.setTranslatesAutoresizingMaskIntoConstraints(false)
+        view.autoLayoutEnabled = true
     }
     
     // Generate and install constraints with priority
     InstallLayoutFormats([format], SkipOptions, metrics, bindings, priority)
 }
 
-public func ConstrainViews(priority : LayoutPriority, format : String, views : UIView...) {
+public func ConstrainViews(priority : LayoutPriority, format : String, views : View...) {
     ConstrainViews(priority, format, [String : AnyObject](), views)
 }
 
-public func ConstrainView(priority : LayoutPriority, format : String, metrics: [String : AnyObject], view : UIView) {
+public func ConstrainView(priority : LayoutPriority, format : String, metrics: [String : AnyObject], view : View) {
     ConstrainViews(priority, format, metrics, [view])
 }
 
-public func ConstrainView(priority : LayoutPriority, format : String, view : UIView) {
+public func ConstrainView(priority : LayoutPriority, format : String, view : View) {
     ConstrainView(priority, format, [String : AnyObject](), view)
 }
 
@@ -478,7 +478,7 @@ public func PlaceViewInSuperview(view : View, position: String, inseth : CGFloat
 }
 
 #if os(iOS)
-public func PlaceView(controller : UIViewController, view : UIView, position : String, inseth : CGFloat, insetv : CGFloat, priority : LayoutPriority) {
+public func PlaceView(controller : UIViewController, view : View, position : String, inseth : CGFloat, insetv : CGFloat, priority : LayoutPriority) {
     view.autoLayoutEnabled = true
     if view.superview == nil {controller.view .addSubview(view)}
 
@@ -511,25 +511,26 @@ public func PlaceView(controller : UIViewController, view : UIView, position : S
 
 public var ViewNameKey = "ViewNameKey"
 public extension NSObject {
-    public var className : String {
+    public var objectClassName : String {
         return "\(self.dynamicType)"
     }
     public var addressString : String {
         get {return NSString(format: "%p", self) as String}
     }
     public var debugName : String {
-        return className + ":" + addressString
+        return objectClassName + ":" + addressString
     }
 }
-public extension UIView {
+public extension View {
     public var viewName : String? {
         get {return objc_getAssociatedObject(self, &ViewNameKey) as? String}
         set {objc_setAssociatedObject(self, &ViewNameKey, newValue, objc_AssociationPolicy(OBJC_ASSOCIATION_RETAIN))}
     }
     public var debugViewName : String {
         get {
-            if className.hasPrefix("_UI") {return className.substringFromIndex(advance(className.startIndex, 3))}
-            return className + ":" + (viewName ?? addressString)}
+            if objectClassName.hasPrefix("_UI") {return objectClassName.substringFromIndex(advance(objectClassName.startIndex, 3))}
+            if objectClassName.hasPrefix("_NS") {return objectClassName.substringFromIndex(advance(objectClassName.startIndex, 3))}
+            return objectClassName + ":" + (viewName ?? addressString)}
     }
 }
 
@@ -543,8 +544,8 @@ public extension NSLayoutConstraint {
             string = string.stringByReplacingOccurrencesOfString(firstView.addressString, withString: "\"" + viewName + "\"")
         }
 
-        if firstView.className.hasPrefix("_UI") {
-            let visible = firstView.className.substringFromIndex(advance(className.startIndex, 3))
+        if firstView.objectClassName.hasPrefix("_UI") {
+            let visible = firstView.objectClassName.substringFromIndex(advance(objectClassName.startIndex, 3))
             string = string.stringByReplacingOccurrencesOfString(firstView.debugName, withString: visible)
         }
 
@@ -553,8 +554,8 @@ public extension NSLayoutConstraint {
                 string = string.stringByReplacingOccurrencesOfString(secondView.addressString, withString: "\"" + viewName + "\"")
             }
             
-            if secondView.className.hasPrefix("_UI") {
-                let visible = secondView.className.substringFromIndex(advance(className.startIndex, 3))
+            if secondView.objectClassName.hasPrefix("_UI") {
+                let visible = secondView.objectClassName.substringFromIndex(advance(objectClassName.startIndex, 3))
                 string = string.stringByReplacingOccurrencesOfString(secondView.debugName, withString: visible)
             }
         }
@@ -564,20 +565,87 @@ public extension NSLayoutConstraint {
     }
 }
 
+public func AddConstraint(request : String, view1 : View, view2 : View, m : CGFloat, c : CGFloat, priority : LayoutPriority) {
+    var components = [String]()
+    for separator in [".", " "] {
+        components = request.componentsSeparatedByString(separator)
+        if count(components) == 3 {break}
+    }
+    
+    if count(components) != 3 {
+        for separator in ["<=", "==", ">=", "<", "=", ">"] {
+            components = request.componentsSeparatedByString(separator)
+            if count(components) == 2 {
+                components = [components[0], separator, components[1]]
+                break;
+            }
+        }
+    }
+    
+    if count(components) != 3 {
+        println("Add constraint format error: "+request)
+        return
+    }
+    
+    let firstAttributeString = components[0].lowercaseString
+    let secondAttributeString = components[2].lowercaseString
+    let relationString = components[1].substringToIndex(advance(components[1].startIndex, 1))
+    
+    #if os(ios)
+        let attributes : [String : NSLayoutAttribute] = [
+        "l":.Left, "r":.Right, "t":.Top, "b":.Bottom,
+        "cx":.CenterX, "cy":.CenterY,"w":.Width,"h":.Height,
+        "left":.Left, "right":.Right, "top":.Top, "bottom":.Bottom,
+        "leading":.Leading, "trailing":.Trailing, "width":.Width, "height":.Height,
+        "centerx":.CenterX, "centery":.CenterY,
+        "leftmargin":.LeftMargin, "rightmargin":.RightMargin,
+        "topmargin":.TopMargin, "bottommargin":.BottomMargin,
+        "leadingmargin":.LeadingMargin, "trailingmargin":.TrailingMargin,
+        "centerxmargin":.CenterXWithinMargins, "centerymargin":.CenterYWithinMargins,
+        "baseline":.Baseline, "firstbaseline":.FirstBaseline,
+        "notanattribute":.NotAnAttribute, "_":.NotAnAttribute,
+        "_naa_":.NotAnAttribute, "skip":.NotAnAttribute,
+        ]
+        #else
+        let attributes : [String : NSLayoutAttribute] = [
+            "l":.Left, "r":.Right, "t":.Top, "b":.Bottom,
+            "cx":.CenterX, "cy":.CenterY,"w":.Width,"h":.Height,
+            "left":.Left, "right":.Right, "top":.Top, "bottom":.Bottom,
+            "leading":.Leading, "trailing":.Trailing, "width":.Width, "height":.Height,
+            "centerx":.CenterX, "centery":.CenterY,
+            "baseline":.Baseline,
+            "notanattribute":.NotAnAttribute, "_":.NotAnAttribute,
+            "_naa_":.NotAnAttribute, "skip":.NotAnAttribute,
+        ]
+    #endif
+    
+    let relations : [String : NSLayoutRelation] = [
+        "<":.LessThanOrEqual, "=":.Equal, ">":.GreaterThanOrEqual]
+    
+    let firstAttribute = attributes[firstAttributeString] ?? .NotAnAttribute
+    let secondAttribute = attributes[secondAttributeString] ?? .NotAnAttribute
+    let relation = relations[relationString] ?? .Equal
+    
+    let constraint = NSLayoutConstraint(item: view1, attribute: firstAttribute, relatedBy: relation, toItem: view2, attribute: secondAttribute, multiplier: m, constant: c)
+    
+    constraint.priority = priority
+    constraint.active = true
+}
+
 public extension View {
     public func dumpViewsAtIndent(indent : Int) {
-        
-        if className.hasPrefix("_UI") {return}
-        
+
+        if objectClassName.hasPrefix("_UI") {return}
+
         // indent and print view
         for i in 0..<indent {print("----")}
         print("[\(debugViewName) \(frame)")
         if tag != 0 {print(" tag: \(tag)")}
-        
+
         // Hugging and resistance
         // print(" Hug:(\(horizontalContentHuggingPriority), \(verticalContentHuggingPriority))")
         // print(" Res:(\(horizontalContentCompressionResistancePriority), \(verticalContentCompressionResistancePriority))")
-        
+
         // Count and references
         if viewConstraints.count > 0 {print(" constraints: \(viewConstraints.count)")}
         if constraintsReferencingView.count > 0 {print(" references: \(constraintsReferencingView.count)")}
@@ -589,13 +657,13 @@ public extension View {
             for i in 0..<indent {print("    ")} // indentation
             println("    \(index + 1). \(constraint.descriptionWithViewNames)")
         }
-        
+
         // Recurse
         for subview in subviews {
             subview.dumpViewsAtIndent(indent + 1)
         }
     }
-    
+
     public func dumpViews() {
         dumpViewsAtIndent(0)
     }
